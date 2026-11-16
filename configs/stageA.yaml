@@ -16,7 +16,7 @@ data:
   crop_jitter_mm: 16
   one_recon_per_scan: true
   num_workers: 6
-  use_cache: true           # read {work_root}/cache/*.npz when present (scripts/cache_volumes.py), else NIfTI
+  use_cache: true           # read {work_root}/cache/*.npz when present (scripts/data/cache_volumes.py), else NIfTI
   limit: null              # cap rows per dataset (smoke tests)
 
 model:

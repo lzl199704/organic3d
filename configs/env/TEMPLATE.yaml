@@ -6,7 +6,7 @@
 #   <ctrate_root>/1mm/img/<patient>/<scan>/<volume>.nii.gz, 1mm/ts_seg/..., dataset/ (HF ibrahimhamamci/CT-RATE files),
 #                 ReXGroundingCT/ (dataset.json + masks)
 #   <radchest_root>/lung_nii/{img,seg}/<id>.nii.gz (+ the RAD-ChestCT label table)
-#   AbdomenAtlas 3.0: set $AA3_ROOT for scripts/prepare_aa3.py (TrainTestIDS/, IID_test/, AbdomenAtlas3.0MiniWithMeta.csv)
+#   AbdomenAtlas 3.0: set $AA3_ROOT for scripts/data/prepare_aa3.py (TrainTestIDS/, IID_test/, AbdomenAtlas3.0MiniWithMeta.csv)
 paths:
   merlin_root: /path/to/merlin          # Merlin (Stanford AIMI): 1 mm NIfTI + TotalSegmentator v2 masks
   ctrate_root: /path/to/CT-RATE         # CT-RATE (HF ibrahimhamamci/CT-RATE): 1 mm NIfTI + TotalSegmentator v2 masks
