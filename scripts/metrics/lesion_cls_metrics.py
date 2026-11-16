@@ -9,7 +9,7 @@ the model's own prompts, as in the CT-RATE column), VLMs the yes/no logit (extau
 rex_heldout_set.parquet --clean_only). Macro AUROC over findings with >= 10 positives and >= 10 negatives.
 95% CIs: 2,000 resamples of patients.
 
-    python scripts/lesion_cls_metrics.py
+    python scripts/metrics/lesion_cls_metrics.py
 Writes {W}/eval/lesion_cls_summary.csv (model, kind, dataset, metric, n, n_findings, value, lo,
 hi).
 """
@@ -20,12 +20,12 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, os.path.dirname(__file__))
 from organic.vocab import FINDING_NAMES
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 # ReXGroundingCT lesion category -> CT-RATE finding

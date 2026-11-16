@@ -1,22 +1,23 @@
-"""Standard report-generation metrics (2026-10-21), the protocol of NV-Reason-CT Table 4 / CT-RATE report papers, on
-the free-text reports of every VLM (extaudit/vlm_report.py; our answer-then-write runs: the text after 'Report:').
+"""Standard report-generation metrics, the protocol of NV-Reason-CT Table 4 / CT-RATE report papers, on the free-text
+reports of every VLM on the full test sets (extaudit/vlm_report.py; our answer-then-write runs: the text after 'Report:').
 
-CT-RATE (v2 test: 3,002 volumes with --set full)
+CT-RATE (v2 test: 3,002 volumes)
   clinical  official RadBERT 18-label classifier on the generated report (threshold 0.5) vs the released labels:
             positive-class macro F1 over the 18 labels (primary, as NV-Reason-CT / CT-CHAT), macro precision / recall,
             CRG (Hamamci et al., MIDL 2025: dataset-level TP/FN/FP over all labels x reports, w_TP = w_FN = (T-A)/2A,
             w_FP = 1, CRG = S_max / (2 S_max - s); an all-normal or all-abnormal report set scores 1/3)
   text      vs the reference Findings_EN: BLEU-4, ROUGE-L, METEOR (COCO-caption implementations: PTB tokenizer, corpus
             BLEU, Java METEOR 1.5), BERTScore and RadGraph-F1 (RadEval), GREEN with --green (RadEval, 7B judge, slow)
-Merlin (test: 5,125 scans with --set full)
+Merlin (test: 5,109 scans)
   text      vs the reference FINDINGS section: the same text metrics (RadEval protocol of the Merlin report papers)
   clinical  our frozen rule labeller v4 (organic.ladder.merlin_report_labels) vs the audited QA labels where present:
             macro F1 over findings with >= 1 positive, and CRG (not a published Merlin standard; reported as ours)
 Patient bootstrap 95% CIs for F1 and CRG (--boot); text metrics are corpus-level.
 
-    PATH=<java 17>/bin:$PATH <report-eval env>/bin/python scripts/report_metrics_std.py \
-        --names vlm4_organic3d,NV-Reason-CT,Hulu-Med-7B,... [--set full|audit200] [--datasets ctrate,merlin] [--green]
-Sources: {W}/evalTrackB/<name>/{d}{_full}_reports_shard*.jsonl. Writes {W}/eval/report_std_{set}.csv.
+    PATH=<java 17>/bin:$PATH <report-eval env>/bin/python scripts/metrics/report_metrics_std.py \
+        --names vlm4_organic3d,NV-Reason-CT,Hulu-Med-7B,... [--datasets ctrate,merlin] [--green]
+Sources: {W}/eval_reports/<name>/<dataset>_reports_shard*.jsonl. Writes {W}/eval/report_std.csv (rows of other models
+and datasets already in it are kept).
 """
 import argparse
 import glob
@@ -28,21 +29,20 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.vocab import CTRATE_FINDINGS, FINDING_NAMES, MERLIN_FINDINGS
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 
 
-def load(name, d, full):
+def load(name, d):
     """index -> report text. '<name>+list': our answer-then-write output with its finding list kept in front of the
     report (the whole reply, as NV-Reason-CT's reports keep their <answer> list); '<name>' alone: the report body."""
     base, with_list = (name[:-5], True) if name.endswith('+list') else (name, False)
-    fs = sorted(glob.glob(f'{W}/evalTrackB/{base}/{d}{"_full" if full else ""}_reports_shard*.jsonl'))
+    fs = sorted(glob.glob(f'{W}/eval_reports/{base}/{d}_reports_shard*.jsonl'))
     out = {}
     for f in fs:
         for l in open(f):
@@ -101,7 +101,7 @@ def merlin_findings(report):
 
 def references(d, vols):
     if d == 'ctrate':
-        import trackB_ctrate_classifier as ctc
+        import ctrate_report_classifier as ctc
         r = pd.read_csv(ctc.REPORTS).set_index('VolumeName').loc[list(vols)]
         return r.Findings_EN.fillna('').astype(str).tolist(), ctc.released_labels(vols), CTRATE_FINDINGS
     m = pd.read_parquet(f'{W}/manifests/merlin.parquet').set_index('volume').loc[list(vols)]
@@ -111,7 +111,7 @@ def references(d, vols):
 
 def extract(texts, d):
     if d == 'ctrate':
-        import trackB_ctrate_classifier as ctc
+        import ctrate_report_classifier as ctc
         return (ctc.classify(texts) >= 0.5).astype(float)
     from organic.ladder import merlin_report_labels
     return merlin_report_labels(texts)[:, [FINDING_NAMES.index(f) for f in MERLIN_FINDINGS]]
@@ -140,22 +140,19 @@ def radeval(hyps, refs, green):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--names', required=True)
-    ap.add_argument('--set', default='full', choices=['full', 'audit200'])
     ap.add_argument('--datasets', default='ctrate,merlin')
     ap.add_argument('--boot', type=int, default=2000)
     ap.add_argument('--green', action='store_true')
     ap.add_argument('--no_text', action='store_true', help='clinical metrics only')
     a = ap.parse_args()
-    full = a.set == 'full'
     rows = []
     for d in a.datasets.split(','):
-        st = pd.read_parquet(f'{W}/extaudit/{d}_set_full.parquet' if full else f'{W}/extaudit/{d}_audit1000_set.parquet')
-        st = st if full else st.head(200)
+        st = pd.read_parquet(f'{W}/extaudit/{d}_set.parquet')
         if d == 'ctrate':                                       # CT-RATE v2: drop the 3 non-chest series
             from organic.ctrate_v2 import no_chest_volumes
             st = st[~st.volume.isin(no_chest_volumes(W))]
         for name in a.names.split(','):
-            rep = load(name, d, full)
+            rep = load(name, d)
             have = st[st['index'].isin(rep)]
             if len(have) < len(st):
                 print(f'{name} {d}: {len(have)} / {len(st)} reports, skipped (incomplete)'); continue
@@ -173,7 +170,7 @@ def main():
             print(json.dumps({k: (round(v, 4) if isinstance(v, float) else v) for k, v in r.items()}), flush=True)
             rows.append(r)
     out = pd.DataFrame(rows)
-    dst = f'{W}/eval/report_std_{a.set}.csv'
+    dst = f'{W}/eval/report_std.csv'
     if os.path.exists(dst):                                     # keep rows of models / datasets not re-run
         old = pd.read_csv(dst)
         old = old[~(old.model + '|' + old.dataset).isin(set(out.model + '|' + out.dataset))]

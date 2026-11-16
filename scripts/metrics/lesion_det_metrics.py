@@ -7,11 +7,11 @@
   free           one sentence pair for every encoder, "There is a mass in the X." minus "There is no mass in the X."
   single         the free positive sentence alone
 Tests:
-  <organ>_tumour_aa3  AbdomenAtlas 3.0 IID test (extaudit/aa3_det.py -> aa3_det_shard*; labels scripts/prepare_aa3.py),
+  <organ>_tumour_aa3  AbdomenAtlas 3.0 IID test (extaudit/aa3_det.py -> aa3_det_shard*; labels scripts/data/prepare_aa3.py),
                       liver / pancreas / kidney per scan: positive = a lesion >= 10 mm, negative = no lesion in the organ
                       (radiologist-revised masks); organs with only < 10 mm lesions left out
 Patient-level bootstrap 95% CIs (2,000; AbdomenAtlas: scan = patient).
-    python scripts/lesion_det_metrics.py [--names enc4_organic3d,...]
+    python scripts/metrics/lesion_det_metrics.py [--names enc4_organic3d,...]
 Writes {W}/eval/lesion_det_summary.csv.
 """
 import argparse

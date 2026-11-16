@@ -1,16 +1,16 @@
-"""OEH (Table 2) and its parts, for the trained fat fill and the unseen fills (supplement S8).
+"""OEH (Table 2) and its parts, for the trained fat fill and the unseen fills (supplement S6.2).
 
-For each VLM harness run (extaudit/out_vlm/<name>/<dataset>_shard*.npz, audit set) and dataset:
-  oeh             = target withdrawal - control withdrawal (= report_tracks 'retraction', the Table 2 OEH), 95% CI
+For each VLM harness run (extaudit/out_vlm/<name>/<dataset>_shard*.npz, test set) and dataset:
+  oeh             = target withdrawal - control withdrawal (= finding_reports 'retraction', the Table 2 OEH), 95% CI
   wd_target       share of correctly stated findings withdrawn after erasing the finding's organ
   wd_control      share withdrawn after erasing a control organ (false retractions)
   fp_target       share of correctly negated findings that turn to "Yes" after erasing the finding's organ
   p_clean_pos     mean P(Yes) of correctly stated findings on the clean scan
   p_target_pos    mean P(Yes) of the same findings after their organ is erased
-Answers use the Table 2 rule (report_tracks: per-finding cross-fitted thresholds on the clean scan). Size findings are
+Answers use the Table 2 rule (finding_reports: per-finding cross-fitted thresholds on the clean scan). Size findings are
 skipped as in the OEH test. A run name '<model>__<fill>' holds one unseen fill (extaudit/vlm_core.py --fills).
 
-    python scripts/oeh_breakdown.py --names vlm4_organic3d,vlm4_organic3d__median,...
+    python scripts/metrics/oeh_breakdown.py --names vlm4_organic3d,vlm4_organic3d__median,...
 Writes {W}/eval/oeh_breakdown.csv.
 """
 import argparse
@@ -21,8 +21,8 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-import report_tracks as rt                                   # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+import finding_reports as rt                                  # noqa: E402
 from organic.vocab import FINDING_NAMES, SIZE_FINDINGS, control_organ_ids, finding_organ_ids   # noqa: E402
 
 
@@ -72,11 +72,11 @@ def main():
     a = ap.parse_args()
     rows = []
     for d in ('ctrate', 'merlin'):
-        srcs = {n: rt.from_harness(n, d) for n in a.names.split(',')}
+        srcs = {n: rt.from_harness(n, d, partial=True) for n in a.names.split(',')}
         srcs = {n: s for n, s in srcs.items() if s is not None}
         if not srcs:
             continue
-        # common scans: subset runs (--first) cover fewer scans than the full audit runs they are compared with
+        # common scans: subset runs (vlm_core.py --first N) cover fewer scans than the full runs they are compared with
         common = set.intersection(*[set(map(str, s[4])) for s in srcs.values()])
         for n, (P, nv, finds, L, vol) in srcs.items():
             k = np.isin(vol.astype(str), list(common))

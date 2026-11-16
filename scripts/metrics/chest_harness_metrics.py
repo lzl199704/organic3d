@@ -2,7 +2,7 @@
 metric functions (organic/evaluate_chest.py metrics_lobes, metrics_edits), so encoders scored in the harness and in
 evaluate_chest use one rule. Labels: extaudit/ctrate_chest_set.parquet.
 
-    python scripts/chest_harness_metrics.py --names CT-CLIP,COLIPRI,...
+    python scripts/metrics/chest_harness_metrics.py --names CT-CLIP,COLIPRI,...
 Writes {W}/eval/<name>/ctrate_chest_harness.json and {W}/eval/chest_harness_summary.csv (one row per model).
 """
 import argparse
@@ -14,12 +14,12 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 from organic.evaluate_chest import metrics_edits, metrics_lobes      # noqa: E402
 from organic.vocab import FINDING_NAMES                              # noqa: E402
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 

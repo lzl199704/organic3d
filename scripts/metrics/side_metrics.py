@@ -4,7 +4,7 @@ right-side sentences: 50% for chance and for any model that ignores side (a fixe
 side and 0 on the other). Plain accuracy (= the old harness lat_acc on ctrate / merlin) is kept as a check.
 Patient-level bootstrap 95% CIs; paired patient bootstrap of the difference --ref minus every other model.
 
-    python scripts/side_metrics.py
+    python scripts/metrics/side_metrics.py
 Writes {W}/eval/side_summary.csv and side_paired.csv (sets ctrate, merlin, rex, aa3).
 """
 import argparse
@@ -18,8 +18,8 @@ import pandas as pd
 
 from boot_utils import groups
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 NAMES = ('CT-CLIP,CT-VocabFine,fVLM,ViSD-Boost,HLIP,ItemizedCLIP,COLIPRI,enc1_finetune,Jolia,SPECTRE,Merlin,RADAR-plus,'

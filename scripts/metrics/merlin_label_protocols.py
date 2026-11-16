@@ -2,9 +2,9 @@
 
 Label sets for the Merlin test scans:
   ref       the reference labels the harness scores against (manifests/merlin.parquet test rows; 'Uncertain'
-            dropped). The paper's reference labels are NOT distributed: supply your own (scripts/prepare_manifests.py
+            dropped). The paper's reference labels are NOT distributed: supply your own (scripts/data/prepare_manifests.py
             --merlin_test_labels).
-  v4        our report labeller (scripts/label_rules.py = frozen v4) on the test reports, --v4_labels (parquet, index =
+  v4        our report labeller (organic/label_rules.py = frozen v4) on the test reports, --v4_labels (parquet, index =
             volume, columns label_mr_*; default {work_root}/manifests/merlin_test_labels_v4.parquet)
   file_drop Merlin's released zero_shot_findings_disease_cls.csv (--merlin_file; part of the Merlin data release) with -1 rows dropped (the protocol of the Merlin and
             RADAR zero-shot numbers; -1 hides most positives the file's rules miss)
@@ -12,7 +12,7 @@ Label sets for the Merlin test scans:
 Scored on the findings the file shares with our 21 (SHARED) and, for ref / v4, on all findings with >= 10 positives.
 Also writes per-finding label agreement (positives per source, share of v4 positives the file codes -1).
 
-    python scripts/merlin_label_protocols.py --env configs/env/local.yaml --merlin_file <zero_shot_findings_disease_cls.csv> \
+    python scripts/metrics/merlin_label_protocols.py --env configs/env/local.yaml --merlin_file <zero_shot_findings_disease_cls.csv> \
         [--v4_labels <parquet>] [--names enc4_organic3d,COLIPRI,...]
 Writes {work_root}/eval/merlin_label_protocols.csv and merlin_label_agreement.csv.
 """
@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
 
 SHARED = {'mr_hydronephrosis': 'hydronephrosis', 'mr_gallstones': 'gallstones',
@@ -55,7 +55,7 @@ def main():
     ap.add_argument('--merlin_file', required=True, help="Merlin's released zero_shot_findings_disease_cls.csv")
     ap.add_argument('--v4_labels', default=None, help='default {work_root}/manifests/merlin_test_labels_v4.parquet')
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     wr = cfg.paths.work_root
     meta = json.load(open(os.path.join(wr, 'extaudit', 'meta.json')))
     fi = {f: j for j, f in enumerate(meta['findings'])}

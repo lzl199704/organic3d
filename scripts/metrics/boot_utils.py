@@ -1,4 +1,4 @@
-"""Patient-level bootstrap helpers for scripts/heal_metrics.py and scripts/side_metrics.py."""
+"""Patient-level bootstrap helpers for scripts/metrics/heal_metrics.py and scripts/metrics/side_metrics.py."""
 import numpy as np
 
 

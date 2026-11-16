@@ -2,8 +2,8 @@
 
 Reads {work_root}/eval/<run>/<dataset>_scores.npz written by evaluate_stageA (per-volume scores of every condition).
 
-    python scripts/ladder_stats.py --env configs/env/local.yaml --runs enc3_routing,enc4_organic3d --datasets merlin,ctrate
-    python scripts/ladder_stats.py ... --compare enc4_organic3d:enc3_routing      # paired differences + BH over findings
+    python scripts/metrics/ladder_stats.py --env configs/env/local.yaml --runs enc3_routing,enc4_organic3d --datasets merlin,ctrate
+    python scripts/metrics/ladder_stats.py ... --compare enc4_organic3d:enc3_routing      # paired differences + BH over findings
 
 Per run and dataset: macro zero-shot AUROC and the texture erasure effect (target minus control, fat fill), each with a
 95% percentile CI from resampling patients (B = --boot). Per comparison: per-finding difference in zero-shot AUROC and in
@@ -17,7 +17,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
 from organic.evaluate_stageA import EVAL_ORGANS, cond_name, organ_ids
 from organic.train_stageA import auroc
@@ -84,7 +84,7 @@ def main():
     ap.add_argument('--boot', type=int, default=2000)
     ap.add_argument('--work_root', default=None, help='read eval/ from here instead of the env work_root (e.g. results pulled from a cluster)')
     a = ap.parse_args()
-    W = a.work_root or load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env).paths.work_root
+    W = a.work_root or load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env).paths.work_root
     rng = np.random.default_rng(0)
     for d in a.datasets.split(','):
         fs = FAM[d]

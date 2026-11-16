@@ -1,16 +1,16 @@
 """CT-RATE's official text classifier (the RadBERT multi-abnormality classifier the CT-RATE authors used to produce
-dataset/multi_abnormality_labels), as the single CT-RATE extractor of report-level Track B.
+dataset/multi_abnormality_labels), the CT-RATE label extractor for free-text reports (scripts/metrics/report_metrics_std.py).
 
 Weights: HF dataset ibrahimhamamci/CT-RATE, models/RadBertClassifier.pth (CC BY-NC-SA 4.0, downloaded 2026-10-14), on
-the base model zzxslp/RadBERT-RoBERTa-4m; both under {CLS_DIR} (default {work_root}/evalTrackB/ctrate_classifier,
+the base model zzxslp/RadBERT-RoBERTa-4m; both under {CLS_DIR} (default {work_root}/eval_reports/ctrate_classifier,
 override with $CTRATE_CLASSIFIER_DIR; layout models/RadBertClassifier.pth and RadBERT-RoBERTa-4m/). Code = CT-CLIP's
 text_classifier (github.com/ibrahimethemhamamci/CT-CLIP, classifier.py, dataset.py, model_trainer.infer): RobertaModel pooler output -> Linear(768,
 18), tokenizer max_length 512 (padding to max_length, truncation), sigmoid >= 0.5. Label order = infer.py label_cols
 (= the 18 label_ct_* findings of organic.vocab, same order). Reference text = Findings_EN + ' ' + Impressions_EN
 (the classifier's training text, text_classifier/data/train.csv).
 
-    python scripts/trackB_ctrate_classifier.py      # check: reference reports vs released labels
-Locations: {work_root} and {ctrate_root} from scripts/workroot.py ($ORGANIC3D_ENV, default configs/env/local.yaml).
+    python scripts/metrics/ctrate_report_classifier.py      # check: reference reports vs released labels
+Locations: {work_root} and {ctrate_root} from organic/workroot.py ($ORGANIC3D_ENV, default configs/env/local.yaml).
 """
 import argparse
 import hashlib
@@ -22,15 +22,15 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import env_paths, work_root  # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from organic.workroot import env_paths, work_root  # noqa: E402
 
 W = work_root()
 CTR = str(env_paths().ctrate_root)
-CLS_DIR = os.environ.get('CTRATE_CLASSIFIER_DIR', f'{W}/evalTrackB/ctrate_classifier')
+CLS_DIR = os.environ.get('CTRATE_CLASSIFIER_DIR', f'{W}/eval_reports/ctrate_classifier')
 CKPT = f'{CLS_DIR}/models/RadBertClassifier.pth'
 BASE = f'{CLS_DIR}/RadBERT-RoBERTa-4m'
-CACHE = f'{W}/evalTrackB/ctrate_classifier_cache.parquet'
+CACHE = f'{W}/eval_reports/ctrate_classifier_cache.parquet'
 REPORTS = f'{CTR}/dataset/radiology_text_reports/validation_reports.csv'
 RELEASED = f'{CTR}/dataset/multi_abnormality_labels/valid_predicted_labels.csv'
 LABEL_COLS = ['Medical material', 'Arterial wall calcification', 'Cardiomegaly', 'Pericardial effusion',
@@ -107,9 +107,10 @@ def released_labels(volumes):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--n', type=int, default=200, help='first N scans of the CT-RATE audit sample')
+    ap.add_argument('--n', type=int, default=200, help='first N scans of the CT-RATE test set (0 = all)')
     a = ap.parse_args()
-    s = pd.read_parquet(f'{W}/extaudit/ctrate_audit1000_set.parquet').head(a.n)
+    s = pd.read_parquet(f'{W}/extaudit/ctrate_set.parquet')
+    s = s.head(a.n) if a.n else s
     P = classify(reference_texts(s.volume)) >= 0.5
     R = released_labels(s.volume)
     agree = (P == R).mean(0)

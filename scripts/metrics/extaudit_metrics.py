@@ -1,7 +1,7 @@
 """Ladder metrics for a released encoder from its extaudit shards (extaudit/core.py), with the same metric and output
 code as our models (evaluate_stageA.metrics / write_outputs), so the tables compare like with like.
 
-    python scripts/extaudit_metrics.py --env configs/env/local.yaml --name CT-CLIP --dataset ctrate
+    python scripts/metrics/extaudit_metrics.py --env configs/env/local.yaml --name CT-CLIP --dataset ctrate
 Reads {work_root}/extaudit/out/{name}/{dataset}_shard*.npz; writes {work_root}/eval/{name}/{dataset}_ladder.csv,
 _scores.npz and _summary.json (no organ-slot swap or block tests: those need our query slots / are ours only).
 CT-RATE is scored on the official v2 test set (organic/ctrate_v2.py; 3,002 volumes) unless --keep_no_chest.
@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
 from organic.ctrate_v2 import no_chest_volumes
 from organic.evaluate_stageA import write_outputs
@@ -32,7 +32,7 @@ def main():
     ap.add_argument('--keep_no_chest', action='store_true', help='CT-RATE: keep the 3 v2-excluded brain series')
     ap.add_argument('--root', default=None, help='harness root (default {work_root}/extaudit)')
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     root = a.root or os.path.join(cfg.paths.work_root, 'extaudit')
     fs = sorted(glob.glob(os.path.join(root, 'out', a.name, f'{a.dataset}_shard*.npz')))
     assert fs, f'no shards for {a.name} {a.dataset}'

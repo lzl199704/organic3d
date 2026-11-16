@@ -3,7 +3,7 @@
 Reads {work_root}/eval/{name}/{dataset}_scores.npz (per-scan scores written by extaudit_metrics / evaluate_stageA) and
 {name}/{dataset}_ladder.csv (finding order). Per finding, scans where either model has no score (NaN, e.g. RADAR's
 segmenter did not find the organ) or no label are dropped, so both models are scored on the same scans.
-  python scripts/paired_zs_bootstrap.py --env configs/env/local.yaml --ours enc4_organic3d \
+  python scripts/metrics/paired_zs_bootstrap.py --env configs/env/local.yaml --ours enc4_organic3d \
       --names RADAR-plus-ft,RADAR-plus,Jolia-long --findings radar
 --findings radar = the findings every RADAR checkpoint scores (as the abdominal table); all = every finding with labels.
 Writes {work_root}/eval/paired_zs_{dataset}_{findings}.csv.
@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 from organic.config import load_config
 from organic.vocab import FINDING_NAMES
 
@@ -49,7 +49,7 @@ def main():
     ap.add_argument('--findings', default='radar')
     ap.add_argument('--n_boot', type=int, default=2000)
     a = ap.parse_args()
-    W = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env).paths.work_root
+    W = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env).paths.work_root
     io, po, lo, so, fo = load(W, a.ours, a.dataset)
     names = a.names.split(',')
     if a.findings == 'radar':

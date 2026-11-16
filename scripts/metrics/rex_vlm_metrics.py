@@ -1,4 +1,4 @@
-"""ReXGroundingCT held-out scans (464; never in any of our training sets) for the Table 2 VLMs (2026-10-25): the same
+"""ReXGroundingCT radiologist-annotated scans (464; never in any of our training sets) for the Table 2 VLMs: the same
 answer metrics as the CT-RATE / Merlin columns.
 
 Labels: finding f is positive on a scan when the radiologists drew a lesion of a category that maps to f
@@ -10,11 +10,11 @@ Labels: finding f is positive on a scan when the radiologists drew a lesion of a
                  rex_heldout_set.parquet --out_tag rex_heldout_ladder: clean, mirror and the CT-RATE organ erasures): the
                  above plus MP (matched-pair AUROC: positive/negative pairs identical on the other 9 lesion labels,
                  organic.ladder.matched_pair_auroc via evaluate_stageB.metrics) and OER (answer test,
-                 report_tracks.evaluate retraction: cross-fitted thresholds, non-size findings, target organ vs control
+                 finding_reports.evaluate retraction: cross-fitted thresholds, non-size findings, target organ vs control
                  organ)  -> W/eval/rex_vlm_ladder.csv
 Point estimates only (the paper reports no intervals).
 
-    python scripts/rex_vlm_metrics.py --mode clean|ladder
+    python scripts/metrics/rex_vlm_metrics.py --mode clean|ladder
 """
 import argparse
 import glob
@@ -25,15 +25,14 @@ import numpy as np
 import pandas as pd
 import torch
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 from organic.evaluate_stageB import metrics  # noqa: E402
 from organic.vocab import FINDING_NAMES  # noqa: E402
 from lesion_cls_metrics import rex_labels  # noqa: E402
 from main_tables import answer, macro  # noqa: E402
-import report_tracks as RT  # noqa: E402
+import finding_reports as RT  # noqa: E402
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 R = f'{W}/extaudit'

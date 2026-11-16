@@ -1,9 +1,9 @@
-"""Lesion erasure (LE) on the heal sets of scripts/prepare_heal.py (2026-11-03, Table 1b): same protocol and metric as
-scripts/boot_utils.py. Per lesion with a valid same-organ control: hit = (s_clean - s_les) > (s_clean - s_ctrl).
+"""Lesion erasure (LE) on the heal sets of scripts/data/prepare_heal.py (2026-11-03, Table 1b): same protocol and metric as
+scripts/metrics/boot_utils.py. Per lesion with a valid same-organ control: hit = (s_clean - s_les) > (s_clean - s_ctrl).
 Patient-level bootstrap 95% CIs; paired patient bootstrap of the hit difference --ref minus every other model.
 Organ groups: aa3 liver / pancreas / kidney (left + right) / all; rex all (left lung, right lung, both lungs as extra rows).
 
-    python scripts/heal_metrics.py --ds aa3
+    python scripts/metrics/heal_metrics.py --ds aa3
 Writes {W}/eval/heal_<ds>_summary.csv and heal_<ds>_paired.csv.
 """
 import argparse
@@ -16,8 +16,8 @@ import pandas as pd
 
 from boot_utils import boot, groups
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 NAMES = ('CT-CLIP,CT-VocabFine,fVLM,ViSD-Boost,HLIP,ItemizedCLIP,COLIPRI,enc1_finetune,Jolia,SPECTRE,Merlin,'
