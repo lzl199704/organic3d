@@ -37,8 +37,8 @@ and the scripts that compute every metric of the paper.
   (10,000 steps, about 4.4 h); evaluation runs on a single GPU.
 
 ```bash
-ENV_DIR=/path/to/env bash scripts/setup_env.sh        # conda env: Python 3.12, PyTorch (CUDA 12.6), requirements.txt
-python scripts/check_env.py                           # versions and imports, no GPU needed
+ENV_DIR=/path/to/env bash scripts/setup/setup_env.sh        # conda env: Python 3.12, PyTorch (CUDA 12.6), requirements.txt
+python scripts/setup/check_env.py                           # versions and imports, no GPU needed
 cp configs/env/TEMPLATE.yaml configs/env/local.yaml   # then fill in the dataset roots and the work root
 python -m pytest tests/                               # unit tests, CPU only
 ```
@@ -47,7 +47,7 @@ python -m pytest tests/                               # unit tests, CPU only
 
 - **Without GPU or data:** `python -m pytest tests/` runs unit tests of the code (losses, edits, organ routing, metrics
   and the harness end to end) on synthetic scans with random weights (`tests/README.md`).
-- **GPU (needs the prepared data):** `ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/smoke_test.sh` trains and
+- **GPU (needs the prepared data):** `ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/setup/smoke_test.sh` trains and
   evaluates both models for a few steps on 1 and on several GPUs, including resuming. A quicker check with the released
   weights is the one-CT demo (`demo/organic3d_demo.py`, see Evaluation).
 
@@ -164,12 +164,18 @@ region lowers the finding's score more; each map is scaled to its own maximum. C
 ```
 organic/     ORGANIC-3D encoder and VLM: model, losses, training
 extaudit/    evaluation harness and adapters for the released models
-scripts/     data preparation, metrics and inference
+scripts/
+  setup/       environment checks and smoke tests
+  data/        dataset preparation and the benchmark sets
+  train/       training launchers
+  evaluation/  one-command evaluation of a model, score export for the benchmark
+  metrics/     the metric scripts behind every table (full test sets)
+  analysis/    attention-map analyses
+  inference/   ORGANIC-3D on a CT (also ships with the weights)
 configs/     training configs, one per model in the paper
 demo/        alignment tests on one CT, with an interactive interface
 docs/        data preparation, metric definitions, adding a new model
 tests/       unit tests of the code (CPU, synthetic data)
-
 ```
 
 ## Data
@@ -187,7 +193,7 @@ Obtain each dataset from its official source under its terms; nothing from any d
 The steps (1 mm resampling, TotalSegmentator masks, splits, report sentences, the 2 mm training cache, the test sets
 and the harness sets) are in `docs/data_preparation.md`. The Merlin test labels of the paper (re-extracted
 from the reports with LLMs, Sec. 4.1) are on the benchmark page (`protocol/files/merlin_test_labels.csv`); pass them with
-`scripts/prepare_manifests.py --merlin_test_labels merlin_test_labels.csv`.
+`scripts/data/prepare_manifests.py --merlin_test_labels merlin_test_labels.csv`.
 
 ## Training
 
@@ -214,9 +220,9 @@ torchrun --nproc_per_node 4 -m organic.train_stageB --env configs/env/local.yaml
 ```
 
 Any config value can be overridden on the command line (`key=value`, e.g. `train.max_steps=100`). Wrappers:
-`scripts/launch_local.sh`, `scripts/launch_stageB_local.sh`, `scripts/launch_multinode.sh`. Before a long run:
-`python scripts/preflight_cpu.py --env configs/env/local.yaml` and `bash scripts/smoke_test.sh`. On Python 3.10,
-`python scripts/patch_triton_py310.py` fixes the Triton kernels of Qwen3.5's linear attention. Outputs:
+`scripts/train/launch_local.sh`, `scripts/train/launch_stageB_local.sh`, `scripts/train/launch_multinode.sh`. Before a long run:
+`python scripts/setup/preflight_cpu.py --env configs/env/local.yaml` and `bash scripts/setup/smoke_test.sh`. On Python 3.10,
+`python scripts/setup/patch_triton_py310.py` fixes the Triton kernels of Qwen3.5's linear attention. Outputs:
 `{work_root}/runs/<run>/` (encoder) and `{work_root}/runsB/<run>/` (VLM: LoRA, projector).
 
 ## Evaluation
@@ -250,8 +256,8 @@ flowchart LR
 ```
 
 ```bash
-python scripts/evaluate.py encoder --model organic3d_enc --ckpt zllhhhh/organic3d-encoder --name enc4_organic3d
-python scripts/evaluate.py vlm --model organic3d_vlm --ckpt zllhhhh/organic3d-vlm --name vlm4_organic3d
+python scripts/evaluation/evaluate.py encoder --model organic3d_enc --ckpt zllhhhh/organic3d-encoder --name enc4_organic3d
+python scripts/evaluation/evaluate.py vlm --model organic3d_vlm --ckpt zllhhhh/organic3d-vlm --name vlm4_organic3d
 ```
 
 | Option | Values |
@@ -263,22 +269,22 @@ python scripts/evaluate.py vlm --model organic3d_vlm --ckpt zllhhhh/organic3d-vl
 
 `--ckpt` takes the released weights (a Hugging Face repo id or a downloaded folder) or a training checkpoint
 (`<work_root>/runs/<run id>/last.pt`; VLM: `<work_root>/runsB/<run id>::<encoder last.pt>`); both give the paper's scores
-exactly. Without arguments, `python scripts/evaluate.py` asks for each option. Scores go to `{work_root}/extaudit/out*/<name>/`
+exactly. Without arguments, `python scripts/evaluation/evaluate.py` asks for each option. Scores go to `{work_root}/extaudit/out*/<name>/`
 and metrics to `{work_root}/eval/`. To add a new model, write an adapter (`docs/adapter_guide.md`); metric definitions
 are in `docs/metrics.md`.
 
 The supplementary analyses run through the same harness: fills that no training step uses
 (`python -m extaudit.core ... --fills water,median,blur`, `python -m extaudit.vlm_core ... --fills median --no_mirror`,
-then `scripts/oeh_breakdown.py`) and the evidence maps of Figure 3 (`--task occlusion`).
+then `scripts/metrics/oeh_breakdown.py`) and the evidence maps of Figure 3 (`--task occlusion`).
 
 ## Inference
 
 ```bash
-python scripts/organic3d.py encoder --ct scan.nii.gz --region chest --totalseg            # finding and sentence scores
-python scripts/organic3d.py vlm --ct scan.nii.gz --region chest --totalseg --report      # yes/no answers and a report
+python scripts/inference/organic3d.py encoder --ct scan.nii.gz --region chest --totalseg            # finding and sentence scores
+python scripts/inference/organic3d.py vlm --ct scan.nii.gz --region chest --totalseg --report      # yes/no answers and a report
 ```
 
-`scripts/organic3d.py` is the same script that ships with the weights (Hugging Face `zllhhhh/organic3d-encoder`,
+`scripts/inference/organic3d.py` is the same script that ships with the weights (Hugging Face `zllhhhh/organic3d-encoder`,
 `zllhhhh/organic3d-vlm`): 1 mm RAS resampling, crop
 centre from TotalSegmentator, then the encoder and the VLM.
 
