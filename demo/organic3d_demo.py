@@ -15,7 +15,7 @@ that names the correct side.
     python demo/organic3d_demo.py --app                    # interactive web interface (needs gradio)
 
 --seg: TotalSegmentator v2 'total' multilabel mask on the CT's 1 mm RAS grid; without it, TotalSegmentator is run
-(scripts/organic3d.py). --weights: the encoder repo or a local directory.
+(scripts/inference/organic3d.py). --weights: the encoder repo or a local directory.
 """
 import argparse
 import json
@@ -28,7 +28,7 @@ import torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..'))
-sys.path.insert(0, os.path.join(HERE, '..', 'scripts'))
+sys.path.insert(0, os.path.join(HERE, '..', 'scripts', 'inference'))
 import organic3d as O                                                                # noqa: E402
 from organic.evaluate_stageA import EVAL_ORGANS                                      # noqa: E402
 from organic.routing import sentence_organs                                          # noqa: E402
