@@ -2,7 +2,7 @@
 # ReXGroundingCT finding scores (d_clean, for the lesion AUROC) for one encoder on local GPUs: shards in parallel,
 # resumable per shard. Pass --rex_set ctrate_rex_set_v2.parquet --out_tag grounding_v2 through EXTRA for the full v2 set.
 #   EXTAUDIT_ROOT=<work_root>/extaudit bash extaudit/run_grounding.sh <adapter> <ckpt|-> <name> "<gpus>" <slots per gpu> <python>
-# Metrics afterwards: scripts/lesion_cls_metrics.py.
+# Metrics afterwards: scripts/metrics/lesion_cls_metrics.py.
 cd "$(dirname "$0")/.."
 AD=$1; CK=$2; NAME=$3; GPUS=($4); SLOTS=$5; PY=$6
 ROOT=${EXTAUDIT_ROOT:?set EXTAUDIT_ROOT=<work_root>/extaudit}

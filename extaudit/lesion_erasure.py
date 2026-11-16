@@ -1,4 +1,4 @@
-"""--task lesion_erasure: the lesion-erasure test (LE, paper Sec. 3.4) on the sets of scripts/prepare_heal.py.
+"""--task lesion_erasure: the lesion-erasure test (LE, paper Sec. 3.4) on the sets of scripts/data/prepare_heal.py.
 LE_SET=rex (ReXGroundingCT lung findings, chest crop) or LE_SET=aa3 (AbdomenAtlas 3.0 liver, pancreas and kidney
 tumours, abdominal crop); run through extaudit/core.py.
 
@@ -6,9 +6,9 @@ Per lesion (>= 10 mm, sentence from the report or "There is a {d} cm mass in the
   clean   the sentence's score on the clean scan;
   les     the lesion erased: its voxels set to the median HU of the organ's normal parenchyma (organ minus every
           lesion dilated 3 mm) + N(0, noise_sd); LE_FILL=sample: values drawn from that parenchyma instead;
-  ctrl    control: the lesion's own shape translated inside the same organ (scripts/prepare_heal.py:
+  ctrl    control: the lesion's own shape translated inside the same organ (scripts/data/prepare_heal.py:
           >= 70% inside the parenchyma, < 5% overlap with any lesion dilated 10 mm), erased the same way.
-Hit (scripts/heal_metrics.py) = s_clean - s_les > s_clean - s_ctrl.
+Hit (scripts/metrics/heal_metrics.py) = s_clean - s_les > s_clean - s_ctrl.
 Field of view: scans longer than ZWIN_MM are cut head-foot to a 480 mm window centred on the organ, for every model.
 Writes {root}/out/<name>/heal_<set>_shard{k}of{n}.parquet.
 """
@@ -24,7 +24,7 @@ ZWIN_MM = 480
 FILL_MODE = os.environ.get('LE_FILL', 'median')
 ORGAN_ID = {'liver': [5], 'pancreas': [7], 'right_kidney': [2], 'left_kidney': [3],          # TotalSegmentator v2 ids
             'left_lung': [10, 11], 'right_lung': [12, 13, 14], 'lungs': [10, 11, 12, 13, 14]}
-LE_SET = os.environ.get('LE_SET')               # 'rex' | 'aa3': the sets of scripts/prepare_heal.py
+LE_SET = os.environ.get('LE_SET')               # 'rex' | 'aa3': the sets of scripts/data/prepare_heal.py
 
 
 def flat_mask(idx, shape, dev):

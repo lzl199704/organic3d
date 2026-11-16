@@ -22,7 +22,7 @@ replace the <im_patch> embeddings (positions 1..256). Question = the M3D open-en
 image?", online_demo.py usage note; M3D-VQA contains Yes/No open answers), i.e. "Is there <phrase> in this image?".
 P(Yes) = sigmoid(logit('▁Yes') - logit('▁No')) at the first answer token (training text = question + " " + answer).
 Probe feature = mean over the 256 projected visual tokens (the LLM input, 3072-d).
-Report (Track B, extaudit/vlm_report.py): M3D-Cap caption format of the authors' caption eval (Bench/eval/eval_caption.py
+Report (extaudit/vlm_report.py): M3D-Cap caption format of the authors' caption eval (Bench/eval/eval_caption.py
 + Bench/dataset/multi_dataset.CapDataset: question = "<im_patch>" * 256 + one of Bench/dataset/prompt_templates
 Caption_templates, no space in between; the eval draws one at random, we fix the first: "Can you provide a caption
 consists of findings for this medical image?"), same image preprocessing as above, the model's own

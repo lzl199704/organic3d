@@ -29,7 +29,7 @@ first answer token (lm_head rows applied in float32), P(Yes) = its sigmoid. ('ye
 Yes/No tokens; AUROC within 0.01 of A/B.)
 Per condition the visual prefix (chat header + slice tokens) is encoded once; question tails are batched on a
 repeated copy of its KV cache. feat = mean of the projected visual tokens (LLM input space, 3584-d).
-Track B reports (report / report_prompt, extaudit/vlm_report.py): the same frames and processor call, prompt =
+Free-text reports (report / report_prompt, extaudit/vlm_report.py): the same frames and processor call, prompt =
 MedUniEval's 3D report-generation prompt (utils/question_formats.py:82 get_report_generation_prompt, used by
 utils/Amos/Amos.py:76 for 3D-AMOS-MM, the only 3D report benchmark in their eval; no CT-RATE report task there, so the
 same prompt for both datasets), the model's own generate() as models/HuluMed_Qwen2 generate_output (greedy:

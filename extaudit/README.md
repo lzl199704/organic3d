@@ -16,27 +16,27 @@ Metric definitions: `docs/metrics.md`. How to add a model:
 | Module | What it does | Output (under `--root`) |
 |---|---|---|
 | `python -m extaudit.core --task ladder` | Encoder ladder: Δ_f = score(positive prompt) − score(negative prompt) per finding on the clean scan, the mirrored scan and each organ erasure (fills `--fills`), plus the laterality sentence pairs | `out/<name>/<dataset>_shard{k}of{n}.npz` |
-| `python -m extaudit.core --task grounding` | ReXGroundingCT clean finding scores for the lesion AUROC (`scripts/lesion_cls_metrics.py`; the mirrored-control erasure it also records is an earlier protocol, not LE); `--rex_set`, `--rex_exclude`, `--out_tag` select the scan set and output prefix (v2 runs: `--rex_set ctrate_rex_set_v2.parquet --out_tag grounding_v2`) | `out/<name>/grounding_shard{k}of{n}.parquet` (or `<out_tag>_shard...`) |
-| `python -m extaudit.core --task aa3_det` | AbdomenAtlas 3.0 IID test (Table 1): liver, pancreas and kidney tumour detection with each model's own prompts and the free sentence pair (`extaudit/aa3_det.py`; set from `scripts/prepare_aa3.py`; metrics `scripts/lesion_det_metrics.py`, dataset value = mean of the three) | `out/<name>/aa3_det_shard{k}of{n}.parquet` |
+| `python -m extaudit.core --task grounding` | ReXGroundingCT clean finding scores for the lesion AUROC (`scripts/metrics/lesion_cls_metrics.py`; the mirrored-control erasure it also records is an earlier protocol, not LE); `--rex_set`, `--rex_exclude`, `--out_tag` select the scan set and output prefix (v2 runs: `--rex_set ctrate_rex_set_v2.parquet --out_tag grounding_v2`) | `out/<name>/grounding_shard{k}of{n}.parquet` (or `<out_tag>_shard...`) |
+| `python -m extaudit.core --task aa3_det` | AbdomenAtlas 3.0 IID test (Table 1): liver, pancreas and kidney tumour detection with each model's own prompts and the free sentence pair (`extaudit/aa3_det.py`; set from `scripts/data/prepare_aa3.py`; metrics `scripts/metrics/lesion_det_metrics.py`, dataset value = mean of the three) | `out/<name>/aa3_det_shard{k}of{n}.parquet` |
 | `python -m extaudit.core --task occlusion` | Evidence maps (occlusion sensitivity) for the qualitative figure (`extaudit/occlusion.py`, case table `$FIG4_CASES`) | `out/<name>/occlusion/<case>.parquet` |
-| `LE_SET=<rex\|aa3> python -m extaudit.core --task lesion_erasure` | Lesion erasure (LE, Table 1): the lesion replaced by its organ's normal tissue vs the same edit of a same-shaped healthy region of the same organ (`extaudit/lesion_erasure.py`; sets from `scripts/prepare_heal.py`; metric `scripts/heal_metrics.py`) | `out/<name>/heal_<set>_shard{k}of{n}.parquet` |
-| `SIDE_SET=<ctrate\|merlin> python -m extaudit.core --task side` | Laterality accuracy (Side, Table 1) on the original scan (`extaudit/side.py`; metric `scripts/side_metrics.py`) | `out/<name>/side_<set>_shard{k}of{n}.parquet` |
-| `python -m extaudit.core --task chest` | CT-RATE chest tests: lung lobe erasure hit rate (LL) (each lobe erased in turn, 2,018 sentences naming one lobe) and density edits (emphysema, aortic and coronary calcium) (`extaudit/chest.py`; set from `scripts/prepare_chest_set.py`; metrics `scripts/chest_harness_metrics.py`) | `out/<name>/chest_shard{k}of{n}.npz` |
+| `LE_SET=<rex\|aa3> python -m extaudit.core --task lesion_erasure` | Lesion erasure (LE, Table 1): the lesion replaced by its organ's normal tissue vs the same edit of a same-shaped healthy region of the same organ (`extaudit/lesion_erasure.py`; sets from `scripts/data/prepare_heal.py`; metric `scripts/metrics/heal_metrics.py`) | `out/<name>/heal_<set>_shard{k}of{n}.parquet` |
+| `SIDE_SET=<ctrate\|merlin> python -m extaudit.core --task side` | Laterality accuracy (Side, Table 1) on the original scan (`extaudit/side.py`; metric `scripts/metrics/side_metrics.py`) | `out/<name>/side_<set>_shard{k}of{n}.parquet` |
+| `python -m extaudit.core --task chest` | CT-RATE chest tests: lung lobe erasure hit rate (LL) (each lobe erased in turn, 2,018 sentences naming one lobe) and density edits (emphysema, aortic and coronary calcium) (`extaudit/chest.py`; set from `scripts/data/prepare_chest_set.py`; metrics `scripts/metrics/chest_harness_metrics.py`) | `out/<name>/chest_shard{k}of{n}.npz` |
 | `python -m extaudit.vlm_core` | Generative VLMs: P(Yes) (or the yes/no logit) per finding question on clean, mirrored and organ-erased scans; `--set_file rex_heldout_set.parquet --clean_only --out_tag rex_heldout` for the ReXGroundingCT classification (464 radiologist-annotated scans) | `out_vlm/<name>/<dataset>_shard{k}of{n}.npz` |
-| `python -m extaudit.vlm_report` | Track B free-text reports, greedy (`--set audit1000 --n 200`: the first 200 audit scans; `--set full --n 0`: the full test set) | `<work_root>/evalTrackB/<name>/<dataset>_reports_shard{k}of{n}.jsonl` |
+| `python -m extaudit.vlm_report` | Free-text reports on the full test set, greedy, each model's own report prompt (metrics `scripts/metrics/report_metrics_std.py`) | `<work_root>/eval_reports/<name>/<dataset>_reports_shard{k}of{n}.jsonl` |
 
 All of them take `--model <adapter module>`, `--ckpt` (adapter-specific variant string), `--name` (output name),
 `--dataset {ctrate, merlin, radchest, ...}`, `--root <work_root>/extaudit` and `--shard k/n`.
 
 **Inputs.** `{root}/meta.json` holds the finding names, prompt phrases, the erased organ groups as
 TotalSegmentator ids, the fill HU values and the noise SD. `{root}/<dataset>_set.parquet` has one row per test scan:
-`index`, `volume`, `patient_id`, `img`, `seg` (absolute paths on your machine), `label_*` and `lat_pairs`. VLMs use
-`<dataset>_audit1000_set.parquet`. Both files are written by `scripts/export_audit_set.py`. Grounding needs
-`scripts/prepare_rexgrounding.py` and LE needs `scripts/prepare_heal.py`.
+`index`, `volume`, `patient_id`, `img`, `seg` (absolute paths on your machine), `label_*` and `lat_pairs`. Encoders and VLMs
+use the same sets. Both files are written by `scripts/data/export_audit_set.py`. Grounding needs
+`scripts/data/prepare_rexgrounding.py` and LE needs `scripts/data/prepare_heal.py`.
 
-**Metrics.** The shards hold per-scan scores only. Metrics are computed by `scripts/extaudit_metrics.py` (encoders),
-`scripts/vlm_metrics.py` (VLMs), `scripts/lesion_cls_metrics.py`, `scripts/heal_metrics.py`, `scripts/side_metrics.py`,
-`scripts/report_tracks.py` (finding-based reports) and `scripts/trackB_metrics.py` (Track B).
+**Metrics.** The shards hold per-scan scores only. Metrics are computed by `scripts/metrics/extaudit_metrics.py` (encoders),
+`scripts/metrics/vlm_metrics.py` (VLMs), `scripts/metrics/lesion_cls_metrics.py`, `scripts/metrics/heal_metrics.py`, `scripts/metrics/side_metrics.py`,
+`scripts/metrics/finding_reports.py` (finding-based reports) and `scripts/metrics/report_metrics_std.py` (free-text reports).
 
 **Convenience wrappers.** `run_local.sh` runs a ladder over several GPUs and then computes its metrics,
 `run_grounding.sh` runs ReXGroundingCT for a list of encoders. Set
@@ -78,11 +78,11 @@ every licence yourself before use. Several are non-commercial.**
 | `radfm` | RadFM | github.com/chaoyi-wu/RadFM | HF `chaoyi-wu/RadFM` (`pytorch_model.zip`) | MIT (LICENSE in clone); weights licence UNKNOWN | `radfm/repo`, `radfm/weights/radfm_bf16.safetensors` (bf16 conversion of the released checkpoint, see open items), `radfm/venv` |
 | `omnict` | OmniCT-7B | github.com/alibaba-damo-academy/OmniCT @d9ddc8b | HF `Alibaba-DAMO-Academy/OmniCT-7B`, `google/siglip-so400m-patch14-384` | weights Apache-2.0 (model card); code: no LICENSE file in repo (UNKNOWN) | `omnict/repo`, `omnict/weights/{OmniCT-7B, siglip-so400m-patch14-384}`, `omnict/venv` |
 | `hulu_med` | Hulu-Med-7B | HF remote code (`ZJU-AI4H/Hulu-Med-7B` @258594714a) | same | Apache-2.0 (docstring; LICENSE in local clone of the code repo) | `hulu_med/venv` |
-| `ctchat` | CT-CHAT (Track B reports; yes/no answers on Merlin and ReXGroundingCT) | CT-CHAT code (llava) from the CT-RATE authors | HF `ibrahimhamamci/CT-RATE` (`models/CT-CHAT`), CT-CLIP v2 | CC BY-NC-SA 4.0 (README "License" section; no LICENSE file) | `ctchat/code`, `ctchat/weights`, `ctchat/ctchat_score.py` (not distributed, see open items), `ctchat/venv`; needs `CT-CLIP/` |
-| `medgemma` | MedGemma 1.5 4B (Track B reports) | `organic/audit_medgemma.py` | HF `google/medgemma-1.5-4b-it` | Health AI Developer Foundations terms (UNKNOWN here, check the model card) | organic env |
-| `organic/audit_medgemma.py` | MedGemma 1.5 4B yes/no audit (`torchrun -m organic.audit_medgemma`) | this repo | as above | as above | organic env |
+| `ctchat` | CT-CHAT (yes/no answers and free-text reports) | CT-CHAT code (llava) from the CT-RATE authors | HF `ibrahimhamamci/CT-RATE` (`models/CT-CHAT`), CT-CLIP v2 | CC BY-NC-SA 4.0 (README "License" section; no LICENSE file) | `ctchat/code`, `ctchat/weights`, `ctchat/ctchat_score.py` (not distributed, see open items), `ctchat/venv`; needs `CT-CLIP/` |
+| `medgemma` | MedGemma 1.5 4B (yes/no answers and free-text reports) | `organic/audit_medgemma.py` | HF `google/medgemma-1.5-4b-it` | Health AI Developer Foundations terms (UNKNOWN here, check the model card) | organic env |
+| `organic/audit_medgemma.py` | MedGemma 1.5 4B model wrapper used by the `medgemma` adapter | this repo | as above | as above | organic env |
 | `nv_reason` | NV-Reason-CT through the shared harness (yes/no answers on clean, mirrored and erased scans; reports; the paper's `NV-Reason-CT_h` rows) | wraps `organic/audit_nvreason.py` | HF `nvidia/NV-Reason-CT` | UNKNOWN (check the model card) | organic env |
-| `organic/audit_nvreason.py` | NV-Reason-CT yes/no audit + reports (`torchrun -m organic.audit_nvreason`) | this repo | HF `nvidia/NV-Reason-CT` | UNKNOWN (not stated in the docstring; check the model card) | organic env (inputs cached by `scripts/cache_nvreason_inputs.py`) |
+| `organic/audit_nvreason.py` | NV-Reason-CT model wrapper (preprocessing, prompts, generation) used by the `nv_reason` adapter | this repo | HF `nvidia/NV-Reason-CT` | UNKNOWN (not stated in the docstring; check the model card) | organic env |
 
 ## Per-baseline environments
 
@@ -109,8 +109,7 @@ Every environment additionally needs numpy, nibabel, pandas, pyarrow and zstanda
 
 ## Open items (not distributed)
 
-- **CT-CHAT yes/no audit.** The CT-CHAT P(Yes) audit (`ctchat_score.py`; consumed by `scripts/ctchat_metrics.py`) and
-  the `ctchat` report adapter's import of `preprocess`, `BASE` and `MODEL` come from a script that is not part of
+- **CT-CHAT helper.** The `ctchat` adapter's import of `preprocess`, `BASE` and `MODEL` come from a script that is not part of
   this repository. Place it at `$ORGANIC3D_BASELINES/ctchat/ctchat_score.py`.
 - **Jolia text cache.** Template prompts are encoded lazily, so no cache is needed for them. The `long` / `long_cls`
   modes need prototype reports (50 positive and 50 negative training reports per finding) in

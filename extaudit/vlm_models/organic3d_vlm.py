@@ -10,7 +10,7 @@ is replaced by the one given here).
 Input = CTDataset's evaluation crop (as organic3d_enc.py): centred on lungs + heart (CT-RATE) or the abdominal organs
 (Merlin) from the TotalSegmentator mask, 384 mm at 1 mm, trilinear to 192^3 at 2 mm, HU clipped to [-1000, 1000] / 1000.
 Question = our training question; score = logit(Yes) - logit(No) at the first answer position (as Organic3DVLM.p_yes).
-Track B report (extaudit/vlm_report.py): our training report prompt (train_stageB.report_prompt) through Organic3DVLM.generate,
+Free-text report (extaudit/vlm_report.py): our training report prompt (train_stageB.report_prompt) through Organic3DVLM.generate,
 greedy, as evaluate_stageB's --gen path (which capped at 256 new tokens; here the driver's cap).
 """
 import os

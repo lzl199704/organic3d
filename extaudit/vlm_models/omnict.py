@@ -26,7 +26,7 @@ which matches the official generate() route exactly).
 Probe feature = mean of the 810 projected 3D visual tokens (LLM input space, 3584-d).
 Deviation: SDPA attention instead of flash_attention_2 (not installed); bf16 as in the official script.
 
-Report generation (Track B, extaudit/vlm_report.py): same image + organ block and chat prompt as above, question =
+Report generation (extaudit/vlm_report.py): same image + organ block and chat prompt as above, question =
 "Write a radiology report for the following CT scan.", the most frequent CT-RATE report-generation request in the
 released MedEval-CT SFT json (medeval-ct-dataset-sft.json, CT-RATE entries answered "Findings: ... Impression: ...";
 the CT-RATE-CAP templates of CT-CHAT's VQA set with the tags stripped). It names no body region, so it is used for

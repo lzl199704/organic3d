@@ -1,5 +1,5 @@
-"""MedGemma 1.5 4B (google/medgemma-1.5-4b-it) as an extaudit adapter for report generation (Track B,
-extaudit/vlm_report.py). Run in the organic env (transformers 5.x); weights google/medgemma-1.5-4b-it from the
+"""MedGemma 1.5 4B (google/medgemma-1.5-4b-it) as an extaudit adapter for report generation
+(extaudit/vlm_report.py). Run in the organic env (transformers 5.x); weights google/medgemma-1.5-4b-it from the
 Hugging Face cache ($HF_HOME if set, else the default ~/.cache/huggingface).
 
 Input = the audit's own CT recipe (organic/audit_medgemma.py, from google-health/medgemma

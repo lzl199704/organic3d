@@ -1,8 +1,7 @@
-"""Report-level Track B (docs/metrics.md, "Report level"): free-text findings reports from released 3D CT VLMs,
-each in its own python env (adapters in extaudit/vlm_models/), on the first N scans (default 200) of the audit sample
-= the scans NV-Reason-CT and our stage-B models generated reports for (evalB/<run>/{d}_reports.json,
-volume_index 0..199). Clean scans only, greedy decoding, each model's own report prompt (adapter.report_prompt).
-Scoring (one extractor per dataset for every model): scripts/trackB_metrics.py.
+"""Free-text findings reports from 3D CT VLMs (docs/metrics.md, "Report level"), each model in its own python env
+(adapters in extaudit/vlm_models/), on the full test set (<dataset>_set.parquet). Clean scans only, greedy decoding,
+each model's own report prompt (adapter.report_prompt). Scoring (one extractor per dataset for every model):
+scripts/metrics/report_metrics_std.py.
 
 Adapter API (in addition to the vlm_core API):
     report_prompt(dataset) -> str           the model's own report-generation request, as its authors use it
@@ -11,7 +10,7 @@ Adapter API (in addition to the vlm_core API):
 
     CUDA_VISIBLE_DEVICES=0 <model env>/bin/python -m extaudit.vlm_report \
         --model omnict --name OmniCT-7B --dataset ctrate --root <work_root>/extaudit [--shard 0/2]
-Writes {--out}/{name}/{dataset}_reports_shard{k}of{n}.jsonl (default --out = <work_root>/evalTrackB, i.e. the folder
+Writes {--out}/{name}/{dataset}_reports_shard{k}of{n}.jsonl (default --out = <work_root>/eval_reports, i.e. the folder
 next to --root), one line per scan ({index, volume, prompt, text, sec}); a rerun skips scans already written (resume
 after OOM / preemption).
 """
@@ -35,25 +34,20 @@ def main():
     ap.add_argument('--name', required=True)
     ap.add_argument('--dataset', default='ctrate')
     ap.add_argument('--root', required=True, help='{work_root}/extaudit')
-    ap.add_argument('--n', type=int, default=200, help='first N scans of the set (0 = all)')
-    ap.add_argument('--set', default='audit1000', choices=['audit1000', 'full'],
-                    help="audit1000: {d}_audit1000_set.parquet; full: {d}_set_full.parquet = the whole test set (CT-RATE "
-                         "3,005 = 3,002 v2 + 3 non-chest dropped at scoring; Merlin 5,125), audit scans first with the same index")
+    ap.add_argument('--n', type=int, default=0, help='first N scans of the set (0 = all)')
     ap.add_argument('--shard', default='0/1')
     ap.add_argument('--max_new_tokens', type=int, default=768)
-    ap.add_argument('--out', default=None, help='default: {root}/../evalTrackB = {work_root}/evalTrackB')
+    ap.add_argument('--out', default=None, help='default: {root}/../eval_reports = {work_root}/eval_reports')
     ap.add_argument('--workers', type=int, default=2)
     a = ap.parse_args()
     k, n = map(int, a.shard.split('/'))
     if a.out is None:
-        a.out = os.path.join(a.root, '..', 'evalTrackB')
-    rows = pd.read_parquet(os.path.join(a.root, f'{a.dataset}_audit1000_set.parquet' if a.set == 'audit1000'
-                                        else f'{a.dataset}_set_full.parquet'))
+        a.out = os.path.join(a.root, '..', 'eval_reports')
+    rows = pd.read_parquet(os.path.join(a.root, f'{a.dataset}_set.parquet'))
     rows = (rows.head(a.n) if a.n else rows).iloc[k::n]
     out_dir = os.path.join(a.out, a.name)
     os.makedirs(out_dir, exist_ok=True)
-    tag = '' if a.set == 'audit1000' else '_full'
-    path = os.path.join(out_dir, f'{a.dataset}{tag}_reports_shard{k}of{n}.jsonl')
+    path = os.path.join(out_dir, f'{a.dataset}_reports_shard{k}of{n}.jsonl')
     done = set()
     if os.path.exists(path):
         with open(path) as fh:

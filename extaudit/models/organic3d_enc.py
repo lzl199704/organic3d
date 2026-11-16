@@ -28,7 +28,7 @@ def released(ckpt):
 
 def inference_module():
     import sys
-    sys.path.insert(0, os.path.join(HERE, '..', '..', 'scripts'))
+    sys.path.insert(0, os.path.join(HERE, '..', '..', 'scripts', 'inference'))
     import organic3d
     return organic3d
 

@@ -1,12 +1,12 @@
 """Side accuracy (Side) on original scans: a flipped CT is anatomically situs inversus, so this test does not flip the scan.
 Per sentence that names one side, the score of the sentence vs the same sentence with
-the side swapped, on the original scan only; scripts/side_metrics.py turns them into balanced side accuracy (mean of
+the side swapped, on the original scan only; scripts/metrics/side_metrics.py turns them into balanced side accuracy (mean of
 the accuracy on left-side and right-side sentences: 50% for chance and for any model that ignores side).
 
   SIDE_SET=ctrate | merlin   report sentences of the harness test set ({dataset}_set.parquet lat_pairs: [true, swapped])
                              SIDE_EVERY=k keeps every k-th scan with side sentences (11/03: ctrate 3, merlin 6; the
                              machine was CPU-bound at ~30 s/scan for RADAR+, so the full sets would take > 1 day)
-  SIDE_SET=rex | aa3         expert-mask sides (scripts/prepare_side.py): ReXGroundingCT lung findings, AbdomenAtlas 3.0
+  SIDE_SET=rex | aa3         expert-mask sides (scripts/data/prepare_side.py): ReXGroundingCT lung findings, AbdomenAtlas 3.0
                              kidney tumours; scored on the lesion unit's crop as in extaudit/lesion_erasure.py
 Writes {root}/out/<name>/side_<set>_shard{k}of{n}.parquet (one row per sentence).
 """

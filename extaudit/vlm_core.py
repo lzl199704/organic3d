@@ -1,8 +1,8 @@
 """External 3D CT VLM audit: P(Yes) per finding question on clean, mirrored and organ-erased scans, for released
-generative VLMs, each in its own python env (adapters in extaudit/vlm_models/). Same scans (the fixed-seed audit
-sample of 1,000 per dataset = the first 1,000 of our stage-B evaluation sample), same perturbations (on the 1 mm RAS
-volume before the model's own preprocessing; fat fill -100 HU + N(0, 15), mask dilated 2 mm) and same metric code
-(evaluate_stageB.metrics via scripts/vlm_metrics.py) as NV-Reason-CT, CT-CHAT, MedGemma and our stage-B models.
+generative VLMs, each in its own python env (adapters in extaudit/vlm_models/). Every model gets the same scans (the
+full test set, <dataset>_set.parquet: CT-RATE v2 3,005 rows, 3,002 scored after the non-chest drop; Merlin 5,109), the
+same perturbations (on the 1 mm RAS volume before the model's own preprocessing; fat fill -100 HU + N(0, 15), mask
+dilated 2 mm) and the same metric code (evaluate_stageB.metrics via scripts/metrics/vlm_metrics.py).
 
 Adapter API (class Adapter(ckpt, device)):
     question(phrase) -> str                 the model's own yes/no question for a finding phrase (default below)
@@ -45,7 +45,7 @@ def main():
     ap.add_argument('--shard', default='0/1')
     ap.add_argument('--limit', type=int, default=0)
     ap.add_argument('--workers', type=int, default=4)
-    ap.add_argument('--set_file', default='', help='scan set under --root instead of <dataset>_audit1000_set.parquet, '
+    ap.add_argument('--set_file', default='', help='scan set under --root instead of <dataset>_set.parquet, '
                     'e.g. rex_heldout_set.parquet (ReXGroundingCT held-out scans, classification only)')
     ap.add_argument('--clean_only', action='store_true', help='clean scan only (no mirror, no erasure)')
     ap.add_argument('--out_tag', default='', help='shard file prefix in out_vlm/<name>/ (default: --dataset)')
@@ -56,7 +56,7 @@ def main():
     a = ap.parse_args()
     k, n = map(int, a.shard.split('/'))
     meta = json.load(open(os.path.join(a.root, 'meta.json')))
-    rows = pd.read_parquet(os.path.join(a.root, a.set_file or f'{a.dataset}_audit1000_set.parquet'))
+    rows = pd.read_parquet(os.path.join(a.root, a.set_file or f'{a.dataset}_set.parquet'))
     rows = (rows.head(a.first) if a.first else rows).iloc[k::n]
     if a.limit:
         rows = rows.head(a.limit)

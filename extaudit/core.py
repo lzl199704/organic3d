@@ -6,14 +6,14 @@ preprocessing, so every model sees its native input geometry. Scores are the mod
 the positive prompt minus the negative prompt (monotone in its two-prompt softmax). Laterality: a report sentence naming
 one side vs the same sentence with the side swapped, on the clean and the mirrored scan.
 
---task grounding: ReXGroundingCT lesions (scripts/prepare_rexgrounding.py). Per report finding, the drawn lesion is
+--task grounding: ReXGroundingCT lesions (scripts/data/prepare_rexgrounding.py). Per report finding, the drawn lesion is
 "healed" (voxels set to the scan's own median lung HU + N(0, 15)), and, as control, the same-shaped region mirrored to
 the other side of the lungs (only where it overlaps no drawn lesion). Saved: the finding sentence's score and all
 finding scores (Delta_f) on clean / healed lesion / healed control. Grounded = the lesion's healing lowers its own
 sentence more than the control's.
 
-Inputs come from scripts/export_audit_set.py (rows = evaluate_stageA's test order). Only numpy / torch / nibabel /
-pandas are imported here (adapters may import more), so any model env can run it. Metrics: scripts/extaudit_metrics.py.
+Inputs come from scripts/data/export_audit_set.py (rows = evaluate_stageA's test order). Only numpy / torch / nibabel /
+pandas are imported here (adapters may import more), so any model env can run it. Metrics: scripts/metrics/extaudit_metrics.py.
 
     CUDA_VISIBLE_DEVICES=0 <model env>/bin/python -m extaudit.core --model ctclip --name CT-CLIP --dataset ctrate \
         --root <work_root>/extaudit --shard 0/2
@@ -232,7 +232,7 @@ def run_grounding(a, meta, mdl, dev, k, n):
     if a.limit:
         st = st.head(a.limit)
     by_vol = {v: g for v, g in gt.groupby('volume')}
-    cache = os.path.join(a.root, '..', 'rexground', 'jolia_text_cache.pt')   # scripts/rex_jolia_text_cache.py
+    cache = os.path.join(a.root, '..', 'rexground', 'jolia_text_cache.pt')   # scripts/data/rex_jolia_text_cache.py
     if a.model == 'jolia' and isinstance(getattr(mdl.ad, 'cache', None), dict) and os.path.exists(cache):
         mdl.ad.cache.update(torch.load(cache))
     loader = DataLoader(VolSet(st, os.path.join(a.root, '..', 'rexground', 'masks')), batch_size=None,

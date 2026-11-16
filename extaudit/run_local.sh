@@ -15,4 +15,4 @@ i=0; for g in "${GPUS[@]}"; do for s in $(seq 1 $SLOTS); do
   [ -f $ROOT/out/$NAME/${DS}_shard${i}of$N.npz ] || CUDA_VISIBLE_DEVICES=$g $PY -W ignore -m extaudit.core $ARGS --shard $i/$N > logs/extaudit_${NAME}_${DS}_$i.log 2>&1 &
   i=$((i+1)); done; done; wait
 grep -h "^DONE\|ERROR" logs/extaudit_${NAME}_${DS}_*.log
-$EP scripts/extaudit_metrics.py --env $ENVF --name $NAME --dataset $DS --fills $FILLS > logs/extaudit_${NAME}_${DS}_metrics.log 2>&1 && grep SUMMARY logs/extaudit_${NAME}_${DS}_metrics.log
+$EP scripts/metrics/extaudit_metrics.py --env $ENVF --name $NAME --dataset $DS --fills $FILLS > logs/extaudit_${NAME}_${DS}_metrics.log 2>&1 && grep SUMMARY logs/extaudit_${NAME}_${DS}_metrics.log

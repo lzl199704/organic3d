@@ -1,5 +1,5 @@
 """CT-CHAT (CT-RATE authors; Llama 3.1 8B LoRA + CT-CLIP v2 CTViT, CC-BY-NC-SA) as an extaudit adapter for report
-generation (Track B, extaudit/vlm_report.py) and yes/no answers (extaudit/vlm_core.py: the CT-CHAT audit's question
+generation (extaudit/vlm_report.py) and yes/no answers (extaudit/vlm_core.py: the CT-CHAT audit's question
 route, "<image>\\n <provided>" + 'Is there X in this CT? Answer Yes or No.' + " <short_answer>", P(Yes) = sigmoid of the
 logsumexp of the 'Yes' / ' Yes' logits minus that of 'No' / ' No' at the first answer token; used for Merlin and
 ReXGroundingCT). CT-CHAT is a chest model: on Merlin it is run as is, and its report question drops the word "chest".

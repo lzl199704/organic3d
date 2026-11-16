@@ -24,7 +24,7 @@ The 32 perceiver tokens (projected to 5120-d) replace the <image0..31> embedding
 matmul does (gathered instead of matmul, same values). P(Yes) = sigmoid(logsumexp logits{'▁yes','▁Yes'} -
 logsumexp logits{'▁no','▁No'}) at the first answer token
 (yes_no_logit returns the logit difference itself). Probe feature = mean of the 32 projected visual tokens.
-Report (Track B, extaudit/vlm_report.py): RadFM's 3D report task (multi_dataset_test 'caption' split,
+Report (extaudit/vlm_report.py): RadFM's 3D report task (multi_dataset_test 'caption' split,
 radiopaedia.RadioCaption_Dataset: question = age/sex + presentation + a caption_prompt.json template, answer
 "Finding: ... Impression: ..."); no clinical history here, so the question is the first template alone, "Can you provide
 a caption consists of finding and impression for this medical image?", image at position 0 as above. Decoding as

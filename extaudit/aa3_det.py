@@ -1,11 +1,11 @@
-"""--task aa3_det (2026-10-27): zero-shot tumour detection on the AbdomenAtlas 3.0 IID test split (scripts/prepare_aa3.py).
+"""--task aa3_det (2026-10-27): zero-shot tumour detection on the AbdomenAtlas 3.0 IID test split (scripts/data/prepare_aa3.py).
 Every scan has radiologist-revised tumour masks for liver, pancreas and kidney, so a scan without a lesion in an organ is a
 checked negative from the same cohort. Detection score = positive minus negative prompt, two prompt sets per organ:
   native  each encoder's own published template and score rule, exactly as for the MLC columns (extaudit/native_prompts.py;
           findings liver / pancreatic / renal mass), e.g. CT-CLIP 'Liver mass is present.' / 'Liver mass is not
           present.', ours 'There is liver mass.' / 'No liver mass.'
   free    one sentence pair for every encoder: "There is a mass in the {organ}." / "There is no mass in the {organ}."
-scripts/lesion_det_metrics.py: AUROC per organ (Table 1a: native; supplement: both).
+scripts/metrics/lesion_det_metrics.py: AUROC per organ (Table 1a: native; supplement: both).
 Field of view: as extaudit/lesion_erasure.py, scans longer than ZWIN_MM are cut head-foot to a 480 mm window centred on
 liver + pancreas (the same rule for every scan).
 Writes {root}/out/<name>/aa3_det_shard{k}of{n}.parquet (one row per scan; labels are joined in the metrics script).

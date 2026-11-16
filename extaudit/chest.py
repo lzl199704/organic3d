@@ -14,7 +14,7 @@ WHAT (every scan). Edits (evaluate_chest.edit_masks / calcium_masks, here at 1 m
   ca_cor  the same in a 3 mm shell around the heart, outside heart and aorta (dilated 3 mm) and every labelled structure
 Calcium edits are skipped on contrast-enhanced scans (median of the eroded aorta > 120 HU). Score: the finding deltas
 (the model's own prompts) on the clean and the three edited volumes.
-Writes {root}/out/<name>/chest_shard{k}of{n}.npz; metrics: scripts/chest_harness_metrics.py.
+Writes {root}/out/<name>/chest_shard{k}of{n}.npz; metrics: scripts/metrics/chest_harness_metrics.py.
 """
 import json
 import os
