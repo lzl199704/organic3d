@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this benchmark or code, please cite the paper below."
+title: "ORGANIC-3D"
+type: software
+authors:
+  - name: "ORGANIC-3D authors"
+version: 0.1.0
+license: Apache-2.0
+repository-code: "https://github.com/lzl199704/organic3d"
+url: "<PROJECT_URL>"
+keywords:
+  - 3D CT
+  - vision-language models
+  - image-text alignment
+  - benchmark
+  - medical imaging
+preferred-citation:
+  type: article
+  title: "ORGANIC-3D: Grounding 3D CT Vision Language Models in Organ-Level Image–Text Coupling"
+  authors:
+    - name: "ORGANIC-3D authors"
+  url: "<PAPER_URL>"
