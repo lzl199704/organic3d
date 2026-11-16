@@ -1,0 +1,14 @@
+# Scripts
+
+Run every script from the repository root (`python scripts/<folder>/<script>.py`). Locations come from the env file
+(`configs/env/local.yaml`, or `$ORGANIC3D_ENV` / `$ORGANIC3D_WORK_ROOT`, see `organic/workroot.py`).
+
+| Folder | What it holds | Start with |
+|---|---|---|
+| `setup/` | environment build and checks, CPU preflight, GPU smoke test | `setup_env.sh`, `check_env.py` |
+| `data/` | 1 mm conversion, splits, manifests, report sentences, training cache, external test sets, benchmark sets | `docs/data_preparation.md` |
+| `train/` | multi-GPU and multi-node training launchers | `launch_local.sh` |
+| `evaluation/` | one command per model for every test of the paper; score export for the Hugging Face benchmark | `evaluate.py` |
+| `metrics/` | the metric behind each table, on the full test sets | `docs/metrics.md` |
+| `analysis/` | anatomy-token attention maps (supplement) | `slot_attention_maps.py` |
+| `inference/` | ORGANIC-3D encoder and VLM on one CT (the same file ships with the weights) | `organic3d.py` |
