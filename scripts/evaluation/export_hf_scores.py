@@ -10,17 +10,17 @@ What it maps (internal -> public):
            nvox__rem_* kept; feat kept; lat (per-scan counts [index, n, ok_clean, ok_mirror, both]) ->
            side_scan_id / side_scores: per side sentence, indicator scores with the same joint counts (the harness
            stores counts, not sentence scores, so side correct / side follows image are exact but the scores are 0/1)
-  vlm      {W}/extaudit/out_vlm/<name>/<dataset>_shard*.npz (D__ or P__ keys) or <folder>/<dataset>_scores.npz of the
-           NV-Reason-CT / MedGemma audits -> score__clean, score__mirror, score__rem_<group>@fat, nvox__..., feat
+  vlm      {W}/extaudit/out_vlm/<name>/<dataset>_shard*.npz of one run on the whole test set (D__ or P__ keys)
+           -> score__clean, score__mirror, score__rem_<group>@fat, nvox__..., feat
   grounding {W}/extaudit/out/<name>/grounding_shard*.parquet (+ grounding_v2new_shard*, or grounding_v2_shard* for a
            model run on the whole v2 set) -> scan_id, k, s_clean, s_les, s_ctrl, ctrl_overlap, ctrl_in_lung,
            d_clean / d_les / d_ctrl (18 chest findings)
 With --refs it also writes reference files WITH labels (refs/*.parquet) for local checks; never distribute those
 (the public references are built by the benchmark's protocol/builders from your own dataset copies).
 
-    python scripts/export_hf_scores.py --out <dir> [--models enc4_organic3d,COLIPRI,...] [--only enc,grounding,vlm]
-        [--refs] [--vlm_audit NV-Reason-CT=<folder>,MedGemma-1.5-4B=<folder>]
-W = work root (scripts/workroot.py: $ORGANIC3D_WORK_ROOT, else paths.work_root of $ORGANIC3D_ENV).
+    python scripts/evaluation/export_hf_scores.py --out <dir> [--models enc4_organic3d,COLIPRI,...] \
+        [--only enc,grounding,vlm] [--refs]
+W = work root (organic/workroot.py: $ORGANIC3D_WORK_ROOT, else paths.work_root of $ORGANIC3D_ENV).
 Writes <out>/scores/<name>__<dataset>__<task>.{npz,parquet}.
 """
 import argparse
@@ -33,10 +33,11 @@ import numpy as np
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, '..'))
-sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, '..', '..'))
+sys.path.insert(0, os.path.join(HERE, '..', 'metrics'))
 from organic.ctrate_v2 import no_chest_volumes  # noqa: E402
-from workroot import work_root  # noqa: E402
+from organic.workroot import work_root  # noqa: E402
+import vlm_scores  # noqa: E402
 
 W = work_root()
 
@@ -58,15 +59,6 @@ def ref_encoder(d):
     st = pd.read_parquet(f'{W}/extaudit/{d}_set.parquet')
     if d == 'ctrate':
         st = st[~st.volume.isin(no_chest_volumes(W))]
-    r = pd.DataFrame({'scan_id': st.volume.map(sid).values, 'patient_id': st.patient_id.astype(str).values,
-                      'order': st['index'].values})
-    for f in chest_cols():
-        r[f'label_{f}'] = st[f'label_{f}'].astype(float).values
-    return r
-
-
-def ref_vlm(d):
-    st = pd.read_parquet(f'{W}/extaudit/{d}_audit1000_set.parquet')
     r = pd.DataFrame({'scan_id': st.volume.map(sid).values, 'patient_id': st.patient_id.astype(str).values,
                       'order': st['index'].values})
     for f in chest_cols():
@@ -121,44 +113,21 @@ def conv_encoder(model, d, out):
 
 
 # ------------------------------------------------------------------ VLM
-def vlm_from_harness(name, d):
-    fs = sorted(glob.glob(f'{W}/extaudit/out_vlm/{name}/{d}_shard*.npz'))
-    if not fs:
+def conv_vlm(model, d, out):
+    """One harness run on the whole test set (scripts/metrics/vlm_scores.py) -> the public VLM score file."""
+    cat = vlm_scores.load(model, d)
+    if cat is None:
         return None
-    Z = [dict(np.load(f)) for f in fs]
-    key = 'D__' if any(k.startswith('D__') for k in Z[0]) else 'P__'
-    cat = {k: np.concatenate([z[k] for z in Z]) for k in Z[0] if k.startswith((key, 'nvox__', 'index', 'feat'))}
-    o = np.argsort(cat['index'])
-    cat = {k: v[o] for k, v in cat.items()}
-    S = {k[3:]: v for k, v in cat.items() if k.startswith(key)}
-    NV = {k[6:]: v for k, v in cat.items() if k.startswith('nvox__') and k[6:].startswith('rem_')}
-    return cat['index'], [str(x) for x in Z[0]['findings']], S, NV, cat['feat']
-
-
-def vlm_from_audit(folder, d):
-    """<folder>/<d>_scores.npz of organic/audit_nvreason.py or audit_medgemma.py."""
-    f = f'{folder}/{d}_scores.npz'
-    if not os.path.exists(f):
-        return None
-    z = np.load(f, allow_pickle=True)
-    S = {('clean' if k == 'clean' else 'mirror' if k == 'mirror' else k + '@fat'): z[k] for k in z.files
-         if k in ('clean', 'mirror') or k.startswith('rem_')}
-    NV = {k[5:] + '@fat': z[k] for k in z.files if k.startswith('nvox_rem_')}
-    return z['index'], chest_cols(), S, NV, z['feat']
-
-
-def conv_vlm(model, d, out, audits):
-    src = vlm_from_audit(audits[model], d) if model in audits else vlm_from_harness(model, d)
-    if src is None:
-        return None
-    idx, finds, S, NV, feat = src
-    st = pd.read_parquet(f'{W}/extaudit/{d}_audit1000_set.parquet').set_index('index')
-    o = {'scan_id': np.asarray([sid(v) for v in st.loc[idx, 'volume']], dtype=str), 'findings': np.asarray(finds, dtype=str),
-         'feat': np.asarray(feat, np.float32)}
-    for k, v in S.items():
-        o['score__' + k] = np.asarray(v, np.float64)[:, :len(finds)]
-    for k, v in NV.items():
-        o['nvox__' + k] = np.asarray(v, np.int64)
+    key = 'D__' if any(k.startswith('D__') for k in cat) else 'P__'
+    finds = [str(x) for x in cat['findings']]
+    st = pd.read_parquet(f'{W}/extaudit/{d}_set.parquet').set_index('index')
+    o = {'scan_id': np.asarray([sid(v) for v in st.loc[cat['index'], 'volume']], dtype=str),
+         'findings': np.asarray(finds, dtype=str), 'feat': np.asarray(cat['feat'], np.float32)}
+    for k, v in cat.items():
+        if k.startswith(key):
+            o['score__' + k[3:]] = np.asarray(v, np.float64)[:, :len(finds)]
+        elif k.startswith('nvox__') and k[6:].startswith('rem_'):
+            o[k] = np.asarray(v, np.int64)
     p = f'{out}/scores/{model}__{d}__vlm.npz'
     np.savez_compressed(p, **o)
     return p
@@ -186,8 +155,8 @@ def conv_grounding(model, out):
 
 ENCODERS = ['enc4_organic3d', 'CT-CLIP', 'CT-VocabFine', 'fVLM', 'ViSD-Boost', 'HLIP', 'ItemizedCLIP', 'COLIPRI',
             'Jolia', 'Jolia-long', 'SPECTRE', 'Merlin', 'RADAR-plus', 'RADAR-plus-ft']
-VLMS = ['vlm4_organic3d', 'vlm1_plain', 'Hulu-Med-7B', 'OmniCT-7B', 'M3D-LaMed', 'RadFM',
-        'NV-Reason-CT', 'MedGemma-1.5-4B']
+VLMS = ['vlm4_organic3d', 'vlm1_plain', 'Hulu-Med-7B', 'OmniCT-7B', 'M3D-LaMed', 'RadFM', 'CT-CHAT',
+        'NV-Reason-CT_h', 'MedGemma-1.5-4B']
 
 
 def main():
@@ -196,7 +165,6 @@ def main():
     ap.add_argument('--models', default='', help='comma-separated names (default: all known)')
     ap.add_argument('--only', default='enc,grounding,vlm')
     ap.add_argument('--refs', action='store_true', help='also write labelled reference files (local checks only)')
-    ap.add_argument('--vlm_audit', default='', help='name=folder of a <dataset>_scores.npz audit output, comma-separated')
     a = ap.parse_args()
     os.makedirs(f'{a.out}/scores', exist_ok=True)
     parts = a.only.split(',')
@@ -204,9 +172,7 @@ def main():
         os.makedirs(f'{a.out}/refs', exist_ok=True)
         for d in ('ctrate', 'radchest'):
             ref_encoder(d).to_parquet(f'{a.out}/refs/{d}_test_labelled.parquet', index=False)
-        ref_vlm('ctrate').to_parquet(f'{a.out}/refs/ctrate_vlm1000_labelled.parquet', index=False)
         ref_rex().to_parquet(f'{a.out}/refs/rexgroundingct_findings.parquet', index=False)
-    audits = dict(x.split('=', 1) for x in a.vlm_audit.split(',') if x)
     names = [m for m in a.models.split(',') if m]
     for m in names or ENCODERS:
         if 'enc' in parts:
@@ -215,8 +181,8 @@ def main():
         if 'grounding' in parts:
             print(m, 'grounding', conv_grounding(m, a.out))
     if 'vlm' in parts:
-        for m in names or VLMS + list(audits):
-            print(m, 'vlm', conv_vlm(m, 'ctrate', a.out, audits))
+        for m in names or VLMS:
+            print(m, 'vlm', conv_vlm(m, 'ctrate', a.out))
 
 
 if __name__ == '__main__':

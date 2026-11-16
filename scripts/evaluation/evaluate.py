@@ -1,15 +1,15 @@
 """One command for the paper's evaluation of one model: the harness runs and their metrics, in order.
 
     # encoder (Table 1): every test, or a subset
-    python scripts/evaluate.py encoder --model organic3d_enc --ckpt zllhhhh/organic3d-encoder --name enc4_organic3d \
+    python scripts/evaluation/evaluate.py encoder --model organic3d_enc --ckpt zllhhhh/organic3d-encoder --name enc4_organic3d \
         [--tests mlc,ll,side,lesion,tumour,le]
     # VLM (Tables 2 and 3)
-    python scripts/evaluate.py vlm --model organic3d_vlm --ckpt zllhhhh/organic3d-vlm --name vlm4_organic3d \
+    python scripts/evaluation/evaluate.py vlm --model organic3d_vlm --ckpt zllhhhh/organic3d-vlm --name vlm4_organic3d \
         [--tests answers,reports]
     # a released model in its own environment: harness steps use --model_python, metric steps this python
-    python scripts/evaluate.py encoder --model hlip --name HLIP --model_python <hlip env>/bin/python
-    python scripts/evaluate.py encoder ... --dry_run      # print the commands only
-    python scripts/evaluate.py                            # no arguments: asks for them
+    python scripts/evaluation/evaluate.py encoder --model hlip --name HLIP --model_python <hlip env>/bin/python
+    python scripts/evaluation/evaluate.py encoder ... --dry_run      # print the commands only
+    python scripts/evaluation/evaluate.py                            # no arguments: asks for them
 
 Tests (encoder):  mlc     MLC-AUROC, MP and OE on CT-RATE, RAD-ChestCT and Merlin (fat and soft-tissue fills)
                   ll      lung lobe erasure hit rate (CT-RATE)
@@ -29,7 +29,7 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-REPO = os.path.join(HERE, '..')
+REPO = os.path.join(HERE, '..', '..')
 ENC_TESTS = ['mlc', 'll', 'side', 'lesion', 'tumour', 'le']
 VLM_TESTS = ['answers', 'reports']
 REPORT_HEAD = {'REPORT_HEAD_CTRATE': 'Trachea', 'REPORT_HEAD_MERLIN': 'Lower thorax:'}
@@ -47,38 +47,39 @@ def steps(a, root):
             if t == 'mlc':
                 for d in ('ctrate', 'radchest', 'merlin'):
                     out += [({}, mp, core + ['--dataset', d, '--fills', 'fat,soft']),
-                            ({}, me, ['scripts/extaudit_metrics.py'] + env + ['--name', a.name, '--dataset', d])]
+                            ({}, me, ['scripts/metrics/extaudit_metrics.py'] + env + ['--name', a.name, '--dataset', d])]
             elif t == 'll':
-                out += [({}, mp, core + ['--task', 'chest']), ({}, me, ['scripts/chest_harness_metrics.py', '--names', a.name])]
+                out += [({}, mp, core + ['--task', 'chest']), ({}, me, ['scripts/metrics/chest_harness_metrics.py', '--names', a.name])]
             elif t == 'side':
                 out += [({'SIDE_SET': d}, mp, core + ['--task', 'side']) for d in ('ctrate', 'merlin')]
-                out += [({}, me, ['scripts/side_metrics.py', '--names', a.name])]
+                out += [({}, me, ['scripts/metrics/side_metrics.py', '--names', a.name])]
             elif t == 'lesion':
                 out += [({}, mp, core + ['--task', 'grounding', '--rex_set', 'ctrate_rex_set_v2.parquet',
                                          '--out_tag', 'grounding_v2']),
-                        ({}, me, ['scripts/lesion_cls_metrics.py', '--encoders', a.name, '--vlms', ''])]
+                        ({}, me, ['scripts/metrics/lesion_cls_metrics.py', '--encoders', a.name, '--vlms', ''])]
             elif t == 'tumour':
-                out += [({}, mp, core + ['--task', 'aa3_det']), ({}, me, ['scripts/lesion_det_metrics.py', '--names', a.name])]
+                out += [({}, mp, core + ['--task', 'aa3_det']), ({}, me, ['scripts/metrics/lesion_det_metrics.py', '--names', a.name])]
             elif t == 'le':
                 for d in ('rex', 'aa3'):
                     out += [({'LE_SET': d}, mp, core + ['--task', 'lesion_erasure']),
-                            ({}, me, ['scripts/heal_metrics.py', '--ds', d, '--names', a.name])]
+                            ({}, me, ['scripts/metrics/heal_metrics.py', '--ds', d, '--names', a.name])]
     else:
         for t in a.tests:
             if t == 'answers':
                 vc = ['-m', 'extaudit.vlm_core'] + h
-                out += [({}, mp, vc + ['--dataset', d, '--set_file', f'{d}_set.parquet', '--out_tag', f'{d}_full'])
+                out += [({}, mp, vc + ['--dataset', d])
                         for d in ('ctrate', 'merlin')]
                 out += [({}, mp, vc + ['--dataset', 'ctrate', '--set_file', 'rex_heldout_set.parquet', '--clean_only',
                                        '--out_tag', 'rex_heldout']),
-                        ({}, me, ['scripts/vlm_metrics.py'] + env + ['--name', a.name, '--set', 'full']),
-                        ({}, me, ['scripts/report_tracks.py', '--set', 'full', '--names', a.name]),
-                        ({}, me, ['scripts/rex_vlm_metrics.py', '--mode', 'clean', '--names', a.name])]
+                        ({}, me, ['scripts/metrics/vlm_metrics.py'] + env + ['--name', a.name]),
+                        ({}, me, ['scripts/metrics/finding_reports.py', '--names', a.name]),
+                        ({}, me, ['scripts/metrics/rex_vlm_metrics.py', '--mode', 'clean', '--names', a.name])]
             elif t == 'reports':
-                out += [(REPORT_HEAD, mp, ['-m', 'extaudit.vlm_report'] + h + ['--dataset', d, '--set', 'full', '--n', '0'])
+                out += [(REPORT_HEAD, mp, ['-m', 'extaudit.vlm_report'] + h + ['--dataset', d])
                         for d in ('ctrate', 'merlin')]
-                out += [({}, me, ['scripts/report_metrics_std.py', '--names', a.name]),
-                        ({}, me, ['scripts/report_green.py', '--names', a.name, '--max_length', '4096'])]
+                out += [({}, me, ['scripts/metrics/report_metrics_std.py', '--names', a.name]),
+                        ({}, me, ['scripts/metrics/report_green.py', '--names', a.name, '--max_length', '4096']),
+                        ({}, me, ['scripts/metrics/report_green.py', '--aggregate'])]
     return out
 
 
@@ -121,8 +122,8 @@ def main():
     if bad:
         ap.error(f'unknown tests {sorted(bad)}; choose from {allt}')
     os.environ.setdefault('ORGANIC3D_ENV', os.path.abspath(os.path.join(REPO, a.env)))
-    sys.path.insert(0, HERE)
-    from workroot import work_root
+    sys.path.insert(0, REPO)
+    from organic.workroot import work_root
     root = os.path.join(work_root(), 'extaudit')
     for i, (env, py, args) in enumerate(steps(a, root), 1):
         line = ' '.join([f'{k}={shlex.quote(v)}' for k, v in env.items()] + [shlex.quote(py)] + [shlex.quote(x) for x in args])
