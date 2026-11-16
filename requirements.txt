@@ -1,7 +1,7 @@
 # Environment used for ORGANIC-3D training / evaluation and for the metric scripts (Python 3.10-3.12, CUDA 12).
 # Install torch for your CUDA version first (https://pytorch.org), then: pip install -r requirements.txt
-# Optional, in separate environments: vllm 0.11 (scripts/parse_reports.py),
-# TotalSegmentator v2 (scripts/prepare_1mm.py, prepare_aa3.py --stage ts), matplotlib + pillow (plot scripts), gradio (demo/organic3d_demo.py --app).
+# Optional, in separate environments: vllm 0.11 (scripts/data/parse_reports.py),
+# TotalSegmentator v2 (scripts/data/prepare_1mm.py, prepare_aa3.py --stage ts), matplotlib + pillow (plot scripts), gradio (demo/organic3d_demo.py --app).
 # Each released baseline model needs its own environment: see extaudit/README.md.
 accelerate==1.15.0
 colipri==0.1.3
