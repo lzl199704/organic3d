@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "organic3d"
+version = "0.1.0"
+description = "ORGANIC-3D: an intervention benchmark for organ-level image-text alignment in 3D CT vision-language models, with the ORGANIC-3D encoder and VLM"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "ORGANIC-3D authors" }]
+requires-python = ">=3.10"
+# Exact versions used for the paper: requirements.txt
+dependencies = [
+    "torch>=2.4",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "scipy",
+    "scikit-learn",
+    "nibabel",
+    "zstandard",
+    "omegaconf",
+    "einops",
+    "timm",
+    "monai",
+    "transformers>=5.0",
+    "tokenizers",
+    "huggingface_hub",
+    "accelerate",
+    "peft",
+    "safetensors",
+    "colipri",
+    "dynamic_network_architectures",
+    "flash-linear-attention",
+]
+
+[project.optional-dependencies]
+plots = ["matplotlib", "pillow"]
+parse = ["vllm>=0.11,<0.12"]
+seg = ["TotalSegmentator>=2"]
+dev = ["pytest"]
+
+[tool.setuptools]
+packages = ["organic", "extaudit", "extaudit.models", "extaudit.vlm_models"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
