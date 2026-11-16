@@ -6,7 +6,7 @@ environment; the harness itself imports only numpy, torch, nibabel and pandas (p
 
 Worked examples: `extaudit/models/ctclip.py` (minimal encoder), `extaudit/models/organic3d_enc.py` (mask-guided crop via
 `set_scan`, custom `similarity`), `extaudit/models/merlin.py` (`set_volume`), `extaudit/vlm_models/m3d_lamed.py`
-(minimal VLM), `extaudit/vlm_models/omnict.py` (`yes_no_logit`, batched questions, Track B report).
+(minimal VLM), `extaudit/vlm_models/omnict.py` (`yes_no_logit`, batched questions, free-text report).
 
 ## What the adapter receives
 
@@ -55,7 +55,7 @@ class Adapter:
     def yes_no_logit(self, state, questions): ...   # the logit difference itself (preferred: no ties when P saturates)
     def set_scan(self, seg): ...
     def set_dataset(self, name): ...
-    # Track B (python -m extaudit.vlm_report)
+    # free-text reports (python -m extaudit.vlm_report)
     def report_prompt(self, dataset): ...           # the model's own report request
     def report(self, hu, dataset, max_new_tokens): ...   # greedy free-text report
 ```
@@ -80,7 +80,7 @@ class Adapter:
 ## Verify, then run
 
 ```bash
-export EXTAUDIT_ROOT=<work_root>/extaudit            # meta.json and *_set.parquet from scripts/export_audit_set.py
+export EXTAUDIT_ROOT=<work_root>/extaudit            # meta.json and *_set.parquet from scripts/data/export_audit_set.py
 # encoder smoke test: 150 CT-RATE scans, fat fill only
 CUDA_VISIBLE_DEVICES=0 <model env>/bin/python -m extaudit.core --model <name> --name smoke_<name> \
     --dataset ctrate --root $EXTAUDIT_ROOT --limit 150 --fills fat --workers 4
@@ -96,8 +96,8 @@ run the full sets (`--shard k/n` splits the work across GPUs) and the metrics:
 
 ```bash
 bash extaudit/run_local.sh <name> <ckpt|-> <Display-Name> ctrate "0 1" 2 <model env>/bin/python   # ladder + metrics
-python scripts/extaudit_metrics.py --env configs/env/local.yaml --name <Display-Name> --dataset ctrate
-python scripts/vlm_metrics.py --env configs/env/local.yaml --name <Display-Name> --datasets ctrate,merlin
+python scripts/metrics/extaudit_metrics.py --env configs/env/local.yaml --name <Display-Name> --dataset ctrate
+python scripts/metrics/vlm_metrics.py --env configs/env/local.yaml --name <Display-Name> --datasets ctrate,merlin
 ```
 
 Tasks beyond the ladder need no adapter changes: `--task grounding` (ReXGroundingCT), `--task lesion_erasure` and `--task aa3_det` (the

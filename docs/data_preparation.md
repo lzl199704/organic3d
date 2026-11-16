@@ -15,28 +15,28 @@ Everything is converted to one convention: **1 mm isotropic NIfTI, RAS array ord
 
 ```bash
 # resample to 1 mm RAS (CPU)
-python scripts/prepare_1mm.py --stage resample --src_dir <CT-RATE>/dataset/train --dst_root <ctrate_root> --workers 16
-python scripts/prepare_1mm.py --stage resample --src_dir <CT-RATE>/dataset/valid --dst_root <ctrate_root> --workers 16
-python scripts/prepare_1mm.py --stage resample --src_dir <Merlin images>          --dst_root <merlin_root> --workers 16
+python scripts/data/prepare_1mm.py --stage resample --src_dir <CT-RATE>/dataset/train --dst_root <ctrate_root> --workers 16
+python scripts/data/prepare_1mm.py --stage resample --src_dir <CT-RATE>/dataset/valid --dst_root <ctrate_root> --workers 16
+python scripts/data/prepare_1mm.py --stage resample --src_dir <Merlin images>          --dst_root <merlin_root> --workers 16
 # TotalSegmentator v2 masks (in a TotalSegmentator environment; several workers can share the list)
-<TotalSegmentator env>/bin/python scripts/prepare_1mm.py --stage ts --dst_root <ctrate_root> --device gpu
-<TotalSegmentator env>/bin/python scripts/prepare_1mm.py --stage ts --dst_root <merlin_root> --device gpu
+<TotalSegmentator env>/bin/python scripts/data/prepare_1mm.py --stage ts --dst_root <ctrate_root> --device gpu
+<TotalSegmentator env>/bin/python scripts/data/prepare_1mm.py --stage ts --dst_root <merlin_root> --device gpu
 # HU / mask sanity check on a random sample (median HU in liver, spleen, lungs, vertebrae)
-python scripts/prepare_1mm.py --stage check --dst_root <ctrate_root>
+python scripts/data/prepare_1mm.py --stage check --dst_root <ctrate_root>
 ```
 
 CT-RATE: if your copy stores raw values instead of HU, pass `--rescale_csv` with the CT-RATE metadata (columns
 `VolumeName`, `RescaleSlope`, `RescaleIntercept`). The paper's CT-RATE and Merlin 1 mm volumes and masks came from an
 earlier conversion with the same conventions, so voxel values can differ slightly from a fresh conversion. The paper's
 CT-RATE harness numbers used 1 mm lung crops (HU clipped to [−1000, 1000]); the default export below uses the full
-1 mm volumes (`scripts/export_audit_set.py --ctrate_src`).
+1 mm volumes (`scripts/data/export_audit_set.py --ctrate_src`).
 
 ## 2. Splits and manifests
 
 ```bash
-python scripts/build_splits.py --env configs/env/local.yaml          # -> {work_root}/splits/{merlin,ctrate}_manifest.parquet
-python scripts/prepare_manifests.py --env configs/env/local.yaml --merlin_test_labels merlin_test_labels.csv
-python scripts/verify_data.py --env configs/env/local.yaml           # every image / mask path exists
+python scripts/data/build_splits.py --env configs/env/local.yaml          # -> {work_root}/splits/{merlin,ctrate}_manifest.parquet
+python scripts/data/prepare_manifests.py --env configs/env/local.yaml --merlin_test_labels merlin_test_labels.csv
+python scripts/setup/verify_data.py --env configs/env/local.yaml           # every image / mask path exists
 ```
 
 - **Merlin**: the official split (`meta_final.csv`); one study per patient.
@@ -54,19 +54,19 @@ python scripts/verify_data.py --env configs/env/local.yaml           # every ima
 ## 3. Report sentences (training text) and Merlin training labels
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 <vllm env>/bin/python scripts/parse_reports.py --env configs/env/local.yaml --shard 0/4   # one per GPU
-<vllm env>/bin/python scripts/parse_reports.py --env configs/env/local.yaml --merge
-python scripts/prepare_manifests.py --env configs/env/local.yaml      # re-run: fills Merlin train/val labels
+CUDA_VISIBLE_DEVICES=0 <vllm env>/bin/python scripts/data/parse_reports.py --env configs/env/local.yaml --shard 0/4   # one per GPU
+<vllm env>/bin/python scripts/data/parse_reports.py --env configs/env/local.yaml --merge
+python scripts/data/prepare_manifests.py --env configs/env/local.yaml      # re-run: fills Merlin train/val labels
 ```
 
 Qwen3-14B (vLLM) splits each report into sentences and returns finding, polarity and organ per sentence, plus a negated
 and an organ-swapped rewrite for stated abnormalities. Merlin training labels come from the rule layer
-`scripts/label_rules.py` on top of these claims (uncertain mentions are left unlabelled).
+`organic/label_rules.py` on top of these claims (uncertain mentions are left unlabelled).
 
 ## 4. 2 mm training cache (optional, recommended)
 
 ```bash
-python scripts/cache_volumes.py --env configs/env/local.yaml --workers 48
+python scripts/data/cache_volumes.py --env configs/env/local.yaml --workers 48
 ```
 
 Anatomy-centred crop of 208³ voxels at 2 mm (the 192³ model input plus jitter room) per volume, image as int16 HU and
@@ -77,35 +77,34 @@ the 16-group organ map, in `{work_root}/cache/<dataset>/<volume>.npz`. Training 
 
 ```bash
 # RAD-ChestCT (Zenodo 6406114): convert the released volumes to NIfTI with their spacing, then
-python scripts/prepare_1mm.py --stage resample --src_dir <RAD-ChestCT NIfTI> --dst_root <radchest_root> \
+python scripts/data/prepare_1mm.py --stage resample --src_dir <RAD-ChestCT NIfTI> --dst_root <radchest_root> \
     --img_sub lung_nii/img --seg_sub lung_nii/seg
-<TotalSegmentator env>/bin/python scripts/prepare_1mm.py --stage ts --dst_root <radchest_root> \
+<TotalSegmentator env>/bin/python scripts/data/prepare_1mm.py --stage ts --dst_root <radchest_root> \
     --img_sub lung_nii/img --seg_sub lung_nii/seg
-python scripts/prepare_radchest.py --env configs/env/local.yaml      # labels mapped to the 18 CT-RATE findings
+python scripts/data/prepare_radchest.py --env configs/env/local.yaml      # labels mapped to the 18 CT-RATE findings
 
 # ReXGroundingCT (lesion masks of CT-RATE scans; place the release under <ctrate_root>/ReXGroundingCT)
-python scripts/prepare_rexgrounding.py --env configs/env/local.yaml --workers 32
+python scripts/data/prepare_rexgrounding.py --env configs/env/local.yaml --workers 32
 
 # AbdomenAtlas 3.0 (IID test split only; $AA3_ROOT = the download root)
-AA3_ROOT=<AbdomenAtlas3.0> HF_TOKEN=<token> bash scripts/download_aa3_test.sh
-AA3_ROOT=<AbdomenAtlas3.0> python scripts/prepare_aa3.py --stage resample --workers 16
-AA3_ROOT=<AbdomenAtlas3.0> <TotalSegmentator env>/bin/python scripts/prepare_aa3.py --stage ts --device gpu
-AA3_ROOT=<AbdomenAtlas3.0> python scripts/prepare_aa3.py --stage finalize --workers 16
+AA3_ROOT=<AbdomenAtlas3.0> HF_TOKEN=<token> bash scripts/data/download_aa3_test.sh
+AA3_ROOT=<AbdomenAtlas3.0> python scripts/data/prepare_aa3.py --stage resample --workers 16
+AA3_ROOT=<AbdomenAtlas3.0> <TotalSegmentator env>/bin/python scripts/data/prepare_aa3.py --stage ts --device gpu
+AA3_ROOT=<AbdomenAtlas3.0> python scripts/data/prepare_aa3.py --stage finalize --workers 16
 
 # lesion-erasure (LE) and side sets on ReXGroundingCT and AbdomenAtlas 3.0
-python scripts/prepare_heal.py --ds rex --workers 16
-python scripts/prepare_heal.py --ds aa3 --workers 16
+python scripts/data/prepare_heal.py --ds rex --workers 16
+python scripts/data/prepare_heal.py --ds aa3 --workers 16
 ```
 
 ## 6. Benchmark sets for the harness
 
 ```bash
-python scripts/export_audit_set.py --env configs/env/local.yaml \
-    --datasets ctrate,merlin,radchest,ctrate_audit1000,merlin_audit1000,ctrate_rex
-# ctrate_rex is exported only once every ReXGroundingCT scan with a released mask is mapped; a fresh export then holds
-# the full v2 scan set (3,041 scans; the paper's ctrate_rex_set_v2.parquet differs only in its `index` column)
-python scripts/prepare_chest_set.py --env configs/env/local.yaml          # CT-RATE scans for the lung lobe test (LL)
-python scripts/cache_nvreason_inputs.py --env configs/env/local.yaml     # only for the NV-Reason-CT audit
+python scripts/data/export_audit_set.py --env configs/env/local.yaml --datasets ctrate,merlin,radchest
+# ReXGroundingCT scans (exported only once every scan with a released mask is mapped; 3,041 scans; the paper's
+# ctrate_rex_set_v2.parquet differs only in its `index` column)
+python scripts/data/export_audit_set.py --env configs/env/local.yaml --datasets ctrate_rex --suffix _v2 --no_meta
+python scripts/data/prepare_chest_set.py --env configs/env/local.yaml          # CT-RATE scans for the lung lobe test (LL)
 ```
 
 This writes `{work_root}/extaudit/meta.json` (finding names, prompt phrases, erased organ groups as TotalSegmentator
