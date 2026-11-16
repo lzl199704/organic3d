@@ -1,0 +1,100 @@
+# Stage A (encoder, core 1) base config. Ablations override `loss.*`, `model.*`, `aug.*` only.
+run_name: stageA_debug
+seed: 0
+ev_target_mode: prior      # prior (b_f) | absent | inv_only (ablations B2, B3)
+
+paths:            # filled by configs/env/*.yaml
+  merlin_root: ???
+  ctrate_root: ???
+  work_root: ???
+  hf_home: ???
+
+data:
+  datasets: [ctrate, merlin]
+  dataset_weights: {ctrate: 0.6, merlin: 0.4}
+  pair_frac: 0.25          # share of each batch filled with label-matched pairs (D2 needs them)
+  crop_jitter_mm: 16
+  one_recon_per_scan: true
+  num_workers: 6
+  use_cache: true           # read {work_root}/cache/*.npz when present (scripts/cache_volumes.py), else NIfTI
+  limit: null              # cap rows per dataset (smoke tests)
+
+model:
+  pretrained: true         # COLIPRI weights (microsoft/colipri, MIT)
+  backbone_dim: 864
+  dim: 768
+  queries: anatomy         # anatomy | global (no organ assignment)
+  q_per_organ: 8           # 16 organ groups x 8 = 128
+  q_global: 16             # K = 144
+  query_layers: 2
+  heads: 12
+  token_pe: false          # PE(pbar_k) off: its frequencies (up to 2^15*pi) made it noise (C2 vs A5, 2026-10-02)
+  pool: sentence           # sentence (beta(s)) | mean
+  init_temperature: 0.07
+  grad_checkpointing: true
+  freeze_backbone_blocks: 0
+
+text:
+  max_sentences: 12        # positives sampled per report
+  max_edits: 4
+  max_len: 96
+  intact_only: false       # R3 (from RADAR): drop sentences about organs missing from / cut by the crop
+
+aug:
+  ev_prob: 0.75            # share of samples that get evidence counterfactuals
+  mirror_prob: 0.5         # share of lateral sentences whose volume is mirrored (D1)
+  fills: [fat, soft, mean] # training fills; `zero`-free by design, tested crosswise in E5
+  dilate: 1                # voxels at 2 mm
+  noise_sd: 15.0
+  min_organ_vox: 200       # at 2 mm (1.6 mL)
+  max_controls: 2          # |U| <= 2
+  holdout_organs_ids: []   # E5: organ ids never erased in training
+  holdout_findings: []
+  ev_skip_size: true       # default since 2026-10-04 (decided with the user); size/shape findings (vocab.SIZE_FINDINGS) are not erase targets (stage A and B)
+
+loss:                      # weights; 0 disables a term
+  i2t: 1.0
+  t2i: 1.0
+  txt: 0.5
+  cls: 0.5
+  ev: 1.0
+  mir: 0.25
+  pair: 0.25
+  anat: 0.1
+  swap: 0.0                # U4 organ-slot swap consistency (0 = off); A7 uses it
+  organ_con: 0.0           # R1 (from RADAR): same-organ contrastive term weight
+  report: 0.0              # A8 report-level contrast (scan vs report = mean over its sampled sentences; 0 = off)
+  normal_pos: false        # R2 (from RADAR): organ-normal sentences are not negatives of scans with that organ normal
+  swap_eta: 1.0            # weight of the "stay" half (findings of unrelated organs keep scan i's score)
+  lambda_q: 0.5
+  eta: 1.0
+  huber_delta: 1.0
+  pair_tau: 1.0
+  absent_logit: 5.0
+  ev_detach_text: true     # evidence term moves the image side only (text-side collapse otherwise)
+  ev_start_frac: 0.2       # evidence term off for the first 20% of steps ...
+  ev_ramp_frac: 0.2        # ... then ramped linearly to full weight
+
+optim:
+  lr_backbone: 2.0e-5
+  lr_text: 1.0e-5
+  lr_new: 2.0e-4
+  weight_decay: 0.05
+  warmup_steps: 500
+  grad_clip: 1.0
+
+train:
+  batch_size: 2            # clean volumes per GPU (counterfactual passes add up to 2 per sample)
+  max_steps: 20000
+  steps_per_epoch: null
+  log_every: 20
+  eval_every: 1000
+  save_every: 1000
+  resume: true
+
+eval:
+  fills: [fat]             # test-set erasure fills; E2 (trained on fat only) is tested on unseen fills
+  prompt_style: ours        # ours ('There is X.' / 'No X.') | ctclip ('<Finding> is present.' / '... is not present.')
+  n_val: 800
+  batch_size: 4
+  min_pos: 10

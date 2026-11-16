@@ -1,0 +1,6 @@
+# vlm3_dependence (Table 4, '+ dependence loss'): vlm2_attention + the dependence margin.
+#   torchrun --nproc_per_node 4 -m organic.train_stageB --env configs/env/local.yaml --ablation configs/vlm/vlm3_dependence.yaml
+run_name: vlm3_dependence
+model: {pool: fixed}
+vlm: {organ_tags: false, encoder_ckpt: '${paths.work_root}/runs/enc4_organic3d/last.pt', freeze_encoder: all}
+lossB: {dep: 1.0, att: 0.1}

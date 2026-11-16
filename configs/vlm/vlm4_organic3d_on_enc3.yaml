@@ -1,0 +1,7 @@
+# vlm4_organic3d_on_enc3 (not in Table 4): the vlm4_organic3d recipe on enc3_routing, the encoder without the
+# ORGANIC losses.
+#   torchrun --nproc_per_node 4 -m organic.train_stageB --env configs/env/local.yaml --ablation configs/vlm/vlm4_organic3d_on_enc3.yaml
+run_name: vlm4_organic3d_on_enc3
+model: {pool: fixed}
+vlm: {organ_tags: false, encoder_ckpt: '${paths.work_root}/runs/enc3_routing/last.pt', freeze_encoder: all, report_frac: 0.5, report_chars: 4000, max_steps: 10000, eval_every: 2000, report_mode: list}
+lossB: {report: 1.0, dep: 1.0, att: 0.1, rep_dep: 0.5, rep_margin: 0.05}

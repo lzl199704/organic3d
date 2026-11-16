@@ -1,0 +1,7 @@
+# vlm1_plain (Table 4, VLM row 'Plain fine-tuning'): on the frozen enc4_organic3d; answers and reports by
+# cross-entropy only.
+#   torchrun --nproc_per_node 4 -m organic.train_stageB --env configs/env/local.yaml --ablation configs/vlm/vlm1_plain.yaml
+run_name: vlm1_plain
+model: {pool: fixed}
+vlm: {organ_tags: false, encoder_ckpt: '${paths.work_root}/runs/enc4_organic3d/last.pt', freeze_encoder: all}
+lossB: {dep: 0.0, att: 0.0}

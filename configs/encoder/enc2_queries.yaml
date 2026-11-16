@@ -1,0 +1,7 @@
+# enc2_queries (Table 4, '+ anat. queries'): anatomy queries, text-conditioned pooling over all 144 tokens.
+#   torchrun --nproc_per_node 4 -m organic.train_stageA --env configs/env/local.yaml --ablation configs/encoder/enc2_queries.yaml
+run_name: enc2_queries
+loss: {ev: 0, mir: 0, pair: 0, anat: 0}
+aug: {ev_prob: 0}
+train: {max_steps: 12000, batch_size: 4, eval_every: 2000, save_every: 1000}
+eval: {fills: [fat, soft, mean, water]}

@@ -1,0 +1,18 @@
+# Environment template: copy to configs/env/local.yaml (git-ignored) and fill in the roots of THIS machine.
+#   cp configs/env/TEMPLATE.yaml configs/env/local.yaml
+# Every manifest path is relative to a dataset root, so another machine only needs another env file.
+# Expected layout below each root (see docs/data_preparation.md):
+#   <merlin_root>/meta_final.csv, 1mm/img/<study>.nii.gz, 1mm/ts_seg/<study>.nii.gz
+#   <ctrate_root>/1mm/img/<patient>/<scan>/<volume>.nii.gz, 1mm/ts_seg/..., dataset/ (HF ibrahimhamamci/CT-RATE files),
+#                 ReXGroundingCT/ (dataset.json + masks)
+#   <radchest_root>/lung_nii/{img,seg}/<id>.nii.gz (+ the RAD-ChestCT label table)
+#   AbdomenAtlas 3.0: set $AA3_ROOT for scripts/prepare_aa3.py (TrainTestIDS/, IID_test/, AbdomenAtlas3.0MiniWithMeta.csv)
+paths:
+  merlin_root: /path/to/merlin          # Merlin (Stanford AIMI): 1 mm NIfTI + TotalSegmentator v2 masks
+  ctrate_root: /path/to/CT-RATE         # CT-RATE (HF ibrahimhamamci/CT-RATE): 1 mm NIfTI + TotalSegmentator v2 masks
+  radchest_root: /path/to/RAD-ChestCT   # RAD-ChestCT (Zenodo 6406114), external chest test set (evaluation only)
+  work_root: /path/to/organic3d_work     # manifests, parsed sentences, 2 mm caches, runs, evaluation outputs
+  hf_home: /path/to/hf_cache            # Hugging Face cache (COLIPRI, CXR-BERT, Qwen3.5-4B, ...)
+  # Optional: files stored in another format or folder than <root>/1mm/{img,ts_seg}/<id>.nii.gz.
+  # layout:
+  #   ctrate: {img: "my_img_dir/{id}.nii.gz", seg: "my_seg_dir/{id}.nii.gz"}

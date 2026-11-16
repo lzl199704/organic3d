@@ -1,0 +1,50 @@
+# Stage B (core 2) base config. Merged over configs/stageA.yaml (data, model, aug keys are shared).
+run_name: stageB_debug
+seed: 0
+
+data:
+  num_workers: 6
+
+vlm:
+  llm: Qwen/Qwen3.5-4B
+  encoder_ckpt: colipri          # path to a stage-A last.pt, or 'colipri' (released weights + fresh query head)
+  freeze_encoder: backbone       # all | backbone | none  ('backbone' trains the query head; use 'all' for stage-A checkpoints)
+  lora_r: 32
+  lora_alpha: 64
+  lora_dropout: 0.05
+  grad_checkpointing: true
+  batch_size: 4                  # clean volumes per GPU
+  pair_frac: 0.5                 # share of the batch that is (positive, partner) pairs
+  pair_mode: matched             # matched | unmatched (Pair-DPO-style ablation)
+  report_frac: 0.25              # share of single samples trained on report generation instead of a question
+  report_chars: 1600
+  readout_layer: 16              # D4 hidden layer (used only when lossB.read > 0)
+  organ_tags: false              # A: learned organ embedding added to each visual token (zero-initialised)
+  att_layers: [11, 15, 19, 23]   # B: full-attention layers of Qwen3.5 (3, 7, ..., 31) used for the attention prior
+  log_att: true                  # log the organ attention share every step (also when lossB.att = 0)
+  n_findings: 39
+  lr: 2.0e-4
+  weight_decay: 0.0
+  warmup_steps: 200
+  grad_clip: 1.0
+  max_steps: 6000
+  log_every: 20
+  eval_every: 1000
+  save_every: 1000
+  n_val: 400
+  resume: true
+
+lossB:
+  lm: 1.0
+  report: 0.5                    # weight of report CE relative to QA CE
+  dep: 0.0                       # core 2 off in the base (= B0 standard SFT)
+  pair: 1.0
+  erase: 1.0
+  inv: 0.5
+  margin: 1.0                    # m, in nats of answer log-probability
+  dpo: 0.0
+  dpo_beta: 0.5
+  read: 0.0
+  tswap: 0.0                     # U6: organ-token swap margin (matched partner's organ tokens must lower the answer)
+  tswap_max_findings: 0          # U6 only for findings whose organ group hosts <= this many findings (0 = all; 3 skips the 10 lung findings)
+  att: 0.0                       # B: weight of -log(attention share on the question's organ tokens)
