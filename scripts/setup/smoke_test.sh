@@ -1,8 +1,8 @@
 #!/bin/bash
 # End-to-end check on a new machine: data paths, stage A (1 GPU, multi-GPU, resume, evaluation), stage B (train + evaluate).
-#   ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/smoke_test.sh
+#   ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/setup/smoke_test.sh
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 ENV=${ENV:-configs/env/local.yaml}
 GPUS=${GPUS:-0,1,2,3}
 PY=${PY:-$(dirname "$(command -v python)")}
@@ -27,8 +27,8 @@ echo "== 2. single GPU, full model, 4 steps"
 CUDA_VISIBLE_DEVICES=$FIRST "$PY/python" -m organic.train_stageA --env "$ENV" --ablation configs/encoder/enc4_organic3d.yaml \
     run_name=smoke_1gpu train.max_steps=4 train.eval_every=4 train.save_every=4 $common
 echo "== 3. all GPUs, 6 steps, then resume to 8"
-GPUS=$GPUS ENV=$ENV PY=$PY bash scripts/launch_local.sh configs/encoder/enc4_organic3d.yaml run_name=smoke_multi train.max_steps=6 train.eval_every=6 train.save_every=3 $common
-GPUS=$GPUS ENV=$ENV PY=$PY bash scripts/launch_local.sh configs/encoder/enc4_organic3d.yaml run_name=smoke_multi train.max_steps=8 train.eval_every=8 train.save_every=4 $common
+GPUS=$GPUS ENV=$ENV PY=$PY bash scripts/train/launch_local.sh configs/encoder/enc4_organic3d.yaml run_name=smoke_multi train.max_steps=6 train.eval_every=6 train.save_every=3 $common
+GPUS=$GPUS ENV=$ENV PY=$PY bash scripts/train/launch_local.sh configs/encoder/enc4_organic3d.yaml run_name=smoke_multi train.max_steps=8 train.eval_every=8 train.save_every=4 $common
 echo "== 4. stage-A ladder evaluation (released COLIPRI and the smoke checkpoint)"
 CUDA_VISIBLE_DEVICES=$FIRST "$PY/python" -m organic.evaluate_stageA --env "$ENV" --ckpt colipri --name smoke_colipri --datasets merlin,ctrate --limit 24 --min_pos 1
 W=$("$PY/python" -c "import sys; sys.path.insert(0,'.'); from organic.config import load_config; print(load_config('configs/stageA.yaml', env='$ENV').paths.work_root)")

@@ -1,6 +1,6 @@
 """Check the Python environment without a GPU: versions against requirements.txt, every import our code uses,
 the linear-attention kernels Qwen3.5 needs, a small LoRA and MONAI test, and the GPU driver the torch build needs.
-Prints ENV OK or the failed checks.       python scripts/check_env.py
+Prints ENV OK or the failed checks.       python scripts/setup/check_env.py
 """
 import importlib
 import os
@@ -23,7 +23,7 @@ def check(name, fn):
 def versions():
     from importlib.metadata import version, PackageNotFoundError
     bad = []
-    for line in open(os.path.join(HERE, '..', 'requirements.txt')):
+    for line in open(os.path.join(HERE, '..', '..', 'requirements.txt')):
         m = re.match(r'^([A-Za-z0-9_.\-]+)==([^\s#]+)', line.strip())
         if not m:
             continue
@@ -44,7 +44,7 @@ def imports():
             'colipri', 'dynamic_network_architectures', 'torchio']
     for m in mods:
         importlib.import_module(m)
-    sys.path.insert(0, os.path.join(HERE, '..'))
+    sys.path.insert(0, os.path.join(HERE, '..', '..'))
     for m in ['organic.vocab', 'organic.config', 'organic.data', 'organic.augment', 'organic.model', 'organic.losses',
               'organic.train_stageA', 'organic.evaluate_stageA', 'organic.vlm', 'organic.train_stageB',
               'organic.evaluate_stageB', 'organic.ladder', 'organic.audit_nvreason']:
@@ -53,7 +53,7 @@ def imports():
 
 
 def kernels():
-    import fla  # noqa: F401  (fails on Python 3.10 without scripts/patch_triton_py310.py)
+    import fla  # noqa: F401  (fails on Python 3.10 without scripts/setup/patch_triton_py310.py)
     import torch
     if not torch.cuda.is_available():
         # Triton kernels need a GPU; on a CPU-only login node fla falls back to CPU and transformers reports them
@@ -99,7 +99,7 @@ def isolation():
     pre = os.path.realpath(sys.prefix)
     bad = [m.__name__ for m in (torch, triton, transformers, numpy) if not os.path.realpath(m.__file__).startswith(pre)]
     assert not bad, f'{bad} load from outside this environment ({sys.prefix})'
-    code = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+    code = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
     base = os.path.realpath(sys.base_prefix)
     def foreign(p):
         r = os.path.realpath(p)

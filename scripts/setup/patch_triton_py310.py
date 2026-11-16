@@ -5,7 +5,7 @@ On Python 3.10, inspect.getsourcelines() stops inside a decorator that contains 
 "No function definition found for kernel". This re-reads the full block with ast when that happens.
 Not needed on Python >= 3.11. Idempotent.
 
-    /path/to/env/bin/python scripts/patch_triton_py310.py
+    /path/to/env/bin/python scripts/setup/patch_triton_py310.py
 """
 import re
 import sys

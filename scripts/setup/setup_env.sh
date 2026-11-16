@@ -1,11 +1,11 @@
 #!/bin/bash
 # Build the organic Python environment (conda, Python 3.12, torch 2.14 CUDA 12.6 build), then check it.
-#   ENV_DIR=/path/to/envs/organic TORCH_CUDA=12 bash scripts/setup_env.sh           # torch CUDA 12.6 build (driver >= 525)
-#   FRESH=1 ENV_DIR=... bash scripts/setup_env.sh                                     # delete and rebuild the env
+#   ENV_DIR=/path/to/envs/organic TORCH_CUDA=12 bash scripts/setup/setup_env.sh     # torch CUDA 12.6 build (driver >= 525)
+#   FRESH=1 ENV_DIR=... bash scripts/setup/setup_env.sh                               # delete and rebuild the env
 # Needs internet and conda on PATH (on HPC systems load your conda module first). Optional: CACHE_DIR keeps pip / conda
-# caches and temporary files out of a small home quota. Ends with scripts/check_env.py, which must print ENV OK.
+# caches and temporary files out of a small home quota. Ends with scripts/setup/check_env.py, which must print ENV OK.
 set -eo pipefail
-CODE=$(cd "$(dirname "$0")/.." && pwd)
+CODE=$(cd "$(dirname "$0")/../.." && pwd)
 ENV_DIR=${ENV_DIR:?set ENV_DIR to the folder of the new conda env}
 CACHE_DIR=${CACHE_DIR:-$(dirname "$ENV_DIR")}
 export PIP_CACHE_DIR=$CACHE_DIR/pip_cache TMPDIR=$CACHE_DIR/tmp CONDA_PKGS_DIRS=$CACHE_DIR/conda_pkgs
@@ -29,4 +29,4 @@ grep -vE '^(torch|torchvision)==' "$CODE/requirements.txt" > "$TMPDIR/requiremen
 python -m pip install -r "$TMPDIR/requirements_no_torch.txt"
 python -c "import torch; print('== torch', torch.__version__, 'CUDA', torch.version.cuda, 'from', torch.__file__)"
 python -m pip freeze > "$(dirname "$ENV_DIR")/organic3d_freeze.txt"
-python "$CODE/scripts/check_env.py"
+python "$CODE/scripts/setup/check_env.py"
