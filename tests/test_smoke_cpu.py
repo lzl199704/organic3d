@@ -58,7 +58,7 @@ def synthetic_chest(shape=(64, 64, 64), lung_hu=-850.0, seed=0):
 
 
 def _meta():
-    """= scripts/export_audit_set.py meta.json (finding names, prompt phrases, erased organ groups as TS ids)."""
+    """= scripts/data/export_audit_set.py meta.json (finding names, prompt phrases, erased organ groups as TS ids)."""
     from organic.evaluate_stageA import EVAL_ORGANS, cond_name
     return {'findings': FINDING_NAMES, 'label_name': {f: FINDINGS[f][0] for f in FINDING_NAMES},
             'phrase': {f: FINDINGS[f][2] for f in FINDING_NAMES},
