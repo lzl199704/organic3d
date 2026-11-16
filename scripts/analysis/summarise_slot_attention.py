@@ -1,7 +1,7 @@
-"""Aggregate scripts/slot_attention_maps.py --mode stats into the slot-analysis tables (aggregate numbers only; Merlin
+"""Aggregate scripts/analysis/slot_attention_maps.py --mode stats into the slot-analysis tables (aggregate numbers only; Merlin
 contributes no scan-level output here).
 
-    python scripts/summarise_slot_attention.py --src <stats dir> --out <assets dir>
+    python scripts/analysis/summarise_slot_attention.py --src <stats dir> --out <assets dir>
 """
 import argparse
 import json

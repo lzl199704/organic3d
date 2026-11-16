@@ -16,8 +16,8 @@ Also each slot's effective number of tokens exp(entropy), and the sentence pooli
 positive canonical prompt: mass on the finding's organ slots vs the uniform share.
 --mode figs: saves the crop, organ map, attention and betas of the figure scans to --npz_dir.
 
-    CUDA_VISIBLE_DEVICES=0 python scripts/slot_attention_maps.py --mode stats --out <dir> [--ckpt_dir <work_root>/runs]
-Inputs: the harness sets in {work_root}/extaudit (scripts/workroot.py: $ORGANIC3D_WORK_ROOT, else
+    CUDA_VISIBLE_DEVICES=0 python scripts/analysis/slot_attention_maps.py --mode stats --out <dir> [--ckpt_dir <work_root>/runs]
+Inputs: the harness sets in {work_root}/extaudit (organic/workroot.py: $ORGANIC3D_WORK_ROOT, else
 paths.work_root of $ORGANIC3D_ENV); checkpoints <ckpt_dir>/<model>/last.pt.
 """
 import argparse
@@ -33,13 +33,13 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, '..'))
+sys.path.insert(0, os.path.join(HERE, '..', '..'))
 from extaudit.core import VolSet                                     # noqa: E402
 from extaudit.models.organic3d_enc import Adapter                     # noqa: E402
 from organic.data import _LUT, _crop_pad                            # noqa: E402
 from organic.vocab import ORGAN_NAMES, BACKGROUND, FINDING_NAMES, finding_organ_ids   # noqa: E402
 sys.path.insert(0, HERE)
-from workroot import work_root                                       # noqa: E402
+from organic.workroot import work_root                                       # noqa: E402
 
 W = work_root()
 ROOT = os.path.join(W, 'extaudit')
