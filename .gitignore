@@ -1,0 +1,34 @@
+# local machine config (copy configs/env/TEMPLATE.yaml)
+configs/env/*.yaml
+!configs/env/TEMPLATE.yaml
+
+# third-party baselines, weights, data, outputs: never commit
+baselines/
+work/
+data/
+logs/
+runs/
+runsB/
+eval/
+evalB/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.npz
+*.npy
+*.parquet
+*.csv
+*.nii
+*.nii.gz
+*.jsonl
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.ipynb_checkpoints/
