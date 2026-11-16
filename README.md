@@ -40,14 +40,13 @@ and the scripts that compute every metric of the paper.
 ENV_DIR=/path/to/env bash scripts/setup_env.sh        # conda env: Python 3.12, PyTorch (CUDA 12.6), requirements.txt
 python scripts/check_env.py                           # versions and imports, no GPU needed
 cp configs/env/TEMPLATE.yaml configs/env/local.yaml   # then fill in the dataset roots and the work root
-python tests/test_smoke_cpu.py
+python -m pytest tests/                               # unit tests, CPU only
 ```
 
-### Tests
+### Check the installation
 
-- **CPU (no GPU, no data, no downloads):** `python tests/test_smoke_cpu.py`, `tests/test_fixed_route.py` and
-  `tests/test_native_prompts.py` (or `python -m pytest tests/`). They check the losses, the edits, organ routing, the
-  metrics and the harness end to end on synthetic scans with random weights.
+- **Without GPU or data:** `python -m pytest tests/` runs unit tests of the code (losses, edits, organ routing, metrics
+  and the harness end to end) on synthetic scans with random weights (`tests/README.md`).
 - **GPU (needs the prepared data):** `ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/smoke_test.sh` trains and
   evaluates both models for a few steps on 1 and on several GPUs, including resuming. A quicker check with the released
   weights is the one-CT demo (`demo/organic3d_demo.py`, see Evaluation).
@@ -169,7 +168,7 @@ scripts/     data preparation, metrics and inference
 configs/     training configs, one per model in the paper
 demo/        alignment tests on one CT, with an interactive interface
 docs/        data preparation, metric definitions, adding a new model
-tests/       CPU tests
+tests/       unit tests of the code (CPU, synthetic data)
 
 ```
 
