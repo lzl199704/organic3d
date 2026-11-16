@@ -1,4 +1,4 @@
-# Unit tests
+# Unit tests (CPU)
 
 Checks of the code itself, not the alignment tests of the paper. They run on CPU with synthetic scans and random
 weights, need no data, GPU or download, and take about 15 seconds:
