@@ -5,8 +5,8 @@
 # Output: $AA3_ROOT/IID_test/BDMAP_xxxxxxxx/{ct.nii.gz, segmentations/*.nii.gz}. Resumable (finished archives are
 # listed in $AA3_ROOT/logs/done.txt). Needs a Hugging Face token with access to the dataset in $HF_TOKEN.
 #
-#   AA3_ROOT=/path/to/AbdomenAtlas3.0 HF_TOKEN=hf_... bash scripts/download_aa3_test.sh
-# then: AA3_ROOT=... python scripts/prepare_aa3.py --stage resample / ts / finalize
+#   AA3_ROOT=/path/to/AbdomenAtlas3.0 HF_TOKEN=hf_... bash scripts/data/download_aa3_test.sh
+# then: AA3_ROOT=... python scripts/data/prepare_aa3.py --stage resample / ts / finalize
 set -u
 D=${AA3_ROOT:?set AA3_ROOT}
 T=${HF_TOKEN:?set HF_TOKEN}

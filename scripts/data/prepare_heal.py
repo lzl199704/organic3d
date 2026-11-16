@@ -2,21 +2,21 @@
 ReXGroundingCT (extaudit/lesion_erasure.py), so both
 three LE columns share one protocol: each expert-segmented lesion is replaced by the organ's normal tissue (median HU of
 the organ minus every lesion dilated 3 mm, + N(0, 15)), and the control is the lesion's own shape translated inside the
-same organ (>= 70% inside the parenchyma, < 5% overlap with any lesion dilated 10 mm; scripts/lesion_geometry.py
+same organ (>= 70% inside the parenchyma, < 5% overlap with any lesion dilated 10 mm; scripts/data/lesion_geometry.py
 find_control), healed the same way.
 
-  aa3  AbdomenAtlas 3.0 IID test (scripts/prepare_aa3.py: 1 mm img / lab / TotalSegmentator seg). Lesions >= 10 mm of
+  aa3  AbdomenAtlas 3.0 IID test (scripts/data/prepare_aa3.py: 1 mm img / lab / TotalSegmentator seg). Lesions >= 10 mm of
        liver (lab 1), pancreas (lab 2) and kidney (lab 3); the organ of a kidney lesion is the kidney (left or right)
        that holds most of it. Sentence "There is a {d} cm mass in the {liver|pancreas|right kidney|left kidney}."
   rex  ReXGroundingCT findings never used in training (our_split test or rexgrounding_holdout), radiologist masks
-       (scripts/prepare_rexgrounding.py); the organ is the lung (TotalSegmentator lobes 10-14) on the side that holds
+       (scripts/data/prepare_rexgrounding.py); the organ is the lung (TotalSegmentator lobes 10-14) on the side that holds
        >= 80% of the lesion, else both lungs; the sentence is the report finding itself.
 One unit per (scan, organ): pseudo-volume '<scan>__<organ>.nii.gz' (img / seg point to the real files), masks
 {W}/heal/<ds>/masks/<unit>.npz (k<j> lesion, c<j> control, par, shape), findings {W}/heal/<ds>/findings.parquet,
 harness set {W}/extaudit/heal_<ds>_set.parquet. Run the test with LE_SET=<ds> python -m extaudit.core --task lesion_erasure.
 
-    python scripts/prepare_heal.py --ds aa3 --workers 16
-    python scripts/prepare_heal.py --ds rex --workers 16
+    python scripts/data/prepare_heal.py --ds aa3 --workers 16
+    python scripts/data/prepare_heal.py --ds rex --workers 16
 """
 import argparse
 import os
@@ -29,8 +29,8 @@ import pandas as pd
 
 import lesion_geometry as P  # noqa: E402  (find_control, dilate, feret_axial, thresholds)
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 LUNG_L, LUNG_R = [10, 11], [12, 13, 14]          # TotalSegmentator v2: lung lobes (left upper / lower; right upper / middle / lower)

@@ -6,8 +6,8 @@ CT-RATE: official train / valid split; 'valid' is the public test set. We carve 
          CT-RATE train split), so ReXGroundingCT can serve as an untouched lesion-localization test.
 
 Output: <out>/{merlin,ctrate}_manifest.parquet (default <out> = {work_root}/splits, read by prepare_manifests.py)
-Usage : python scripts/build_splits.py --env configs/env/local.yaml
-        python scripts/build_splits.py --merlin_root <merlin> --ctrate_root <CT-RATE> --out <dir>
+Usage : python scripts/data/build_splits.py --env configs/env/local.yaml
+        python scripts/data/build_splits.py --merlin_root <merlin> --ctrate_root <CT-RATE> --out <dir>
 """
 import argparse
 import glob
@@ -26,9 +26,9 @@ def main():
     ap.add_argument('--out', default=None)
     a = ap.parse_args()
     if a.env:
-        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
         from organic.config import load_config
-        cfg = load_config(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../configs/stageA.yaml'), env=a.env)
+        cfg = load_config(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../configs/stageA.yaml'), env=a.env)
         a.merlin_root = a.merlin_root or cfg.paths.merlin_root
         a.ctrate_root = a.ctrate_root or cfg.paths.ctrate_root
         a.out = a.out or os.path.join(cfg.paths.work_root, 'splits')

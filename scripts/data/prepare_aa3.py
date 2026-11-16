@@ -14,14 +14,14 @@ each scan counts as one patient in the bootstrap.
 Stages (resumable; the raw files are only read):
   resample  (RAS, 1 mm, HU trilinear int16; masks nearest) -> {W}/aa3/1mm/img/<id>.nii.gz and
             {W}/aa3/1mm/lab/<id>.nii.gz (uint8: 1 liver lesion, 2 pancreatic lesion, 3 kidney lesion)
-  ts        TotalSegmentator v2 'total' fast (scripts/lesion_geometry.py; the harness field of view and the gated encoders
+  ts        TotalSegmentator v2 'total' fast (scripts/data/lesion_geometry.py; the harness field of view and the gated encoders
             use its ids) -> {W}/aa3/1mm/seg/<id>.nii.gz
   finalize  {W}/aa3/cases.parquet (per-organ labels, lesion size, contrast phase) + harness set
             {W}/extaudit/aa3_set.parquet
 
-    python scripts/prepare_aa3.py --stage resample --workers 16
-    <TotalSegmentator env>/bin/python scripts/prepare_aa3.py --stage ts --device gpu
-    python scripts/prepare_aa3.py --stage finalize --workers 16
+    python scripts/data/prepare_aa3.py --stage resample --workers 16
+    <TotalSegmentator env>/bin/python scripts/data/prepare_aa3.py --stage ts --device gpu
+    python scripts/data/prepare_aa3.py --stage finalize --workers 16
 """
 import argparse
 import os
@@ -33,8 +33,8 @@ import nibabel as nib
 import numpy as np
 
 RAW = os.environ.get('AA3_ROOT', '')   # AbdomenAtlas 3.0 download root (holds TrainTestIDS/, IID_test/, AbdomenAtlas3.0MiniWithMeta.csv)
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from workroot import work_root                              # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 MIN_EXTENT_MM = 10.0

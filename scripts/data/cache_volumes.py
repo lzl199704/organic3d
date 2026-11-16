@@ -4,7 +4,7 @@ Per volume: anatomy-centred crop of (192 + 2*MARGIN)^3 at 2 mm (margin = jitter 
 organ-group map as uint8, saved as {work_root}/cache/{dataset}/{volume}.npz (compressed). Training then takes
 a random 192^3 window (jitter up to MARGIN*2 mm); evaluation takes the centre.
 
-    python scripts/cache_volumes.py --env configs/env/local.yaml --workers 48 [--splits train,val,test]
+    python scripts/data/cache_volumes.py --env configs/env/local.yaml --workers 48 [--splits train,val,test]
 """
 import argparse
 import os
@@ -17,7 +17,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 import nibabel as nib
 from organic.config import load_config, abspath, read_manifest
 from organic.volio import read_image, read_mask, image_space, sample_raw_on_mask_grid, hu_checks
@@ -78,7 +78,7 @@ def main():
     ap.add_argument('--workers', type=int, default=32)
     ap.add_argument('--limit', type=int, default=0)
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     jobs = []
     for d in a.datasets.split(','):
         m = read_manifest(cfg, d).drop_duplicates('volume')

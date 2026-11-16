@@ -9,8 +9,8 @@ Outputs ({work_root}/parsed/):
   merlin_labels.parquet volume, label_<mr_finding>  (1 present; 0 absent or organ reported without it; NaN otherwise)
 
 Usage (one process per GPU; merge afterwards with --merge):
-  CUDA_VISIBLE_DEVICES=0 <vllm env>/bin/python scripts/parse_reports.py --env configs/env/local.yaml --shard 0/4
-  <vllm env>/bin/python scripts/parse_reports.py --env configs/env/local.yaml --merge
+  CUDA_VISIBLE_DEVICES=0 <vllm env>/bin/python scripts/data/parse_reports.py --env configs/env/local.yaml --shard 0/4
+  <vllm env>/bin/python scripts/data/parse_reports.py --env configs/env/local.yaml --merge
 """
 import argparse
 import glob
@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from omegaconf import OmegaConf
 from organic.vocab import FINDINGS, ORGAN_NAMES, MERLIN_FINDINGS
@@ -312,7 +312,7 @@ def ok_swap(t, e):
 def clean_claims(claims):
     """Post-hoc checks on LLM claims (after proof-reading 150 claims): Merlin finding/polarity follow the rule layer;
     CT-RATE keyword fallback for missed findings; rewrites that are not contradictions are dropped."""
-    import label_rules as lr
+    import organic.label_rules as lr
     c = claims.copy()
     c['polarity_llm'] = c.polarity
     c = c.sort_values(['volume', 'idx']).reset_index(drop=True)
@@ -370,7 +370,7 @@ def clean_claims(claims):
 def merlin_labels(claims):
     """Hybrid patient labels for Merlin: LLM claims (gated, organ-checked) + rule layer (label_rules.py).
     1 if any present claim; NaN if only uncertain; otherwise 0 (closed world, matching the closed-world test reference labels)."""
-    import label_rules as lr
+    import organic.label_rules as lr
     out = {}
     for vol, g in claims.groupby('volume', sort=False):
         g = g.sort_values('idx')

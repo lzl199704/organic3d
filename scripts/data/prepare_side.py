@@ -1,5 +1,5 @@
 """Expert-mask side sets for the unflipped side test (2026-11-03; extaudit/side.py, SIDE_SET=rex|aa3). Built from the
-lesion-erasure units of scripts/prepare_heal.py, so the scans, crops and patients are those of Table 1b's LE columns.
+lesion-erasure units of scripts/data/prepare_heal.py, so the scans, crops and patients are those of Table 1b's LE columns.
 
   rex  held-out ReXGroundingCT findings whose radiologist mask lies >= 80% in one lung (heal organ left_lung /
        right_lung) and whose sentence names that side and only that side (no 'bilateral' / 'both'). Swapped sentence =
@@ -9,7 +9,7 @@ lesion-erasure units of scripts/prepare_heal.py, so the scans, crops and patient
        the {side} kidney.'; dropped when the other kidney holds any tumour voxel (label 3, kidney dilated 3 mm).
 Writes {W}/side/<ds>.parquet: volume (heal unit), case, organ, side, k, patient, text_true, text_swap.
 
-    python scripts/prepare_side.py --ds rex --workers 16
+    python scripts/data/prepare_side.py --ds rex --workers 16
 """
 import argparse
 import os

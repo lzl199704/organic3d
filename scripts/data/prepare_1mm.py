@@ -2,7 +2,7 @@
 
     <dst_root>/1mm/img/<rel>.nii.gz       HU, int16, 1 mm isotropic, RAS (nibabel as_closest_canonical), NOT clipped
     <dst_root>/1mm/ts_seg/<rel>.nii.gz    TotalSegmentator v2 'total' multilabel mask on the same grid (uint8)
-(sub-folders configurable: RAD-ChestCT uses --img_sub lung_nii/img --seg_sub lung_nii/seg, see scripts/prepare_radchest.py)
+(sub-folders configurable: RAD-ChestCT uses --img_sub lung_nii/img --seg_sub lung_nii/seg, see scripts/data/prepare_radchest.py)
 
 <rel> is the source path relative to --src_dir without '.nii.gz', so the folder structure is kept:
   CT-RATE  (HF ibrahimhamamci/CT-RATE, dataset/{train,valid}/<patient>/<scan>/<volume>.nii.gz)
@@ -20,8 +20,8 @@ public files, so voxel values can differ slightly. CT-RATE: if your copy stores 
 (CT-RATE metadata: VolumeName, RescaleSlope, RescaleIntercept); the printed HU check (median HU in air / lungs /
 liver) should look like CT.
 
-    python scripts/prepare_1mm.py --src_dir /path/to/CT-RATE/dataset/valid --dst_root /path/to/CT-RATE --stage resample --workers 8
-    <TotalSegmentator env>/bin/python scripts/prepare_1mm.py --dst_root /path/to/CT-RATE --stage ts --device gpu
+    python scripts/data/prepare_1mm.py --src_dir /path/to/CT-RATE/dataset/valid --dst_root /path/to/CT-RATE --stage resample --workers 8
+    <TotalSegmentator env>/bin/python scripts/data/prepare_1mm.py --dst_root /path/to/CT-RATE --stage ts --device gpu
 """
 import argparse
 import glob
@@ -107,7 +107,7 @@ def run_ts(dst_root, device, fast, img_sub='1mm/img', seg_sub='1mm/ts_seg'):
 def hu_check(dst_root, n=20, seed=0, img_sub='1mm/img', seg_sub='1mm/ts_seg'):
     """Median HU inside TotalSegmentator structures for a random sample (organic.volio.hu_checks rules)."""
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
     from organic.volio import hu_checks
     segs = sorted(glob.glob(os.path.join(dst_root, seg_sub, '**', '*.nii.gz'), recursive=True))
     rng = np.random.default_rng(seed)

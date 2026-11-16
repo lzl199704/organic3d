@@ -1,20 +1,16 @@
-"""Export a test set for the external-encoder audit (extaudit/): one row per test volume, in evaluate_stageA's order,
+"""Export a test set for the benchmark harness (extaudit/): one row per test volume, in evaluate_stageA's order,
 so `index` joins our models' *_scores.npz. Also writes the shared metadata (finding names, prompt phrases, erased organ
 groups as TotalSegmentator ids) that the model adapters read, so they need no organic import.
 
-    python scripts/export_audit_set.py --env configs/env/local.yaml --datasets ctrate,merlin
-Datasets: ctrate, merlin, radchest, {ctrate,merlin}_audit1000 (external VLMs, full 1 mm scans), ctrate_rex (ReXGroundingCT scans; run after prepare_rexgrounding.py).
-Writes {work_root}/extaudit/{dataset}_set.parquet and {work_root}/extaudit/meta.json.
+    python scripts/data/export_audit_set.py --env configs/env/local.yaml --datasets ctrate,merlin,radchest
+    python scripts/data/export_audit_set.py --env configs/env/local.yaml --datasets ctrate_rex --suffix _v2 --no_meta
+Datasets: ctrate, merlin, radchest (the full test sets; encoders and VLMs), ctrate_rex (ReXGroundingCT scans; run after
+prepare_rexgrounding.py; the harness reads it as ctrate_rex_set_v2.parquet).
+Writes {work_root}/extaudit/{dataset}_set{suffix}.parquet and {work_root}/extaudit/meta.json.
 
 ctrate_rex refuses to export from an incomplete rexground/findings.parquet (every ReXGroundingCT scan with a released
-mask and a volume in our manifest must have been mapped). The first export (10/10, ctrate_rex_set.parquet) was taken
-from the first prepare_rexgrounding.py pass, in which all 414 CT-RATE valid (= our test) scans failed on a wrong
-original-NIfTI path; the --only_missing re-run added them to findings.parquet 6 min later but the set was never
-re-exported, so --task grounding never saw them. Rebuild without touching the old file or meta.json:
-
-    python scripts/export_audit_set.py --env configs/env/local.yaml --datasets ctrate_rex --suffix _v2 \
-        --keep {work_root}/extaudit/ctrate_rex_set.parquet --no_meta
-(--keep: rows of that file are copied verbatim, same `index`; scans not in it are appended with new indices.)
+mask and a volume in our manifest must have been mapped; re-run prepare_rexgrounding.py --only_missing first).
+--keep <set>: rows of that file are copied verbatim (same `index`); scans not in it are appended with new indices.
 """
 import argparse
 import json
@@ -23,7 +19,7 @@ import sys
 
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import abspath, load_config, read_manifest
 from organic.evaluate_stageA import EVAL_ORGANS, cond_name, lateral_sentences
 from organic.vocab import FINDING_NAMES, FINDINGS, MERLIN_FINDINGS, ORGANS
@@ -40,14 +36,11 @@ def main():
     ap.add_argument('--keep', default=None, help='existing set whose rows are kept verbatim; only new volumes appended')
     ap.add_argument('--no_meta', action='store_true', help='do not rewrite meta.json')
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     out = os.path.join(cfg.paths.work_root, 'extaudit')
     os.makedirs(out, exist_ok=True)
     for d in a.datasets.split(','):
-        if d.endswith('_audit1000'):                        # external-VLM audit sample (= MedGemma / CT-CHAT / NV audits)
-            from organic.audit_nvreason import audit_sample
-            m = audit_sample(cfg, d.split('_')[0], 1000)
-        elif d == 'ctrate_rex':                               # ReXGroundingCT scans (any split), for --task grounding
+        if d == 'ctrate_rex':                               # ReXGroundingCT scans (any split), for --task grounding
             gt = pd.read_parquet(os.path.join(cfg.paths.work_root, 'rexground', 'findings.parquet'))
             m = read_manifest(cfg, 'ctrate')
             from prepare_rexgrounding import REX                # completeness check (see docstring)

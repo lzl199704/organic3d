@@ -1,6 +1,6 @@
 """Write root-relative training manifests for Merlin and CT-RATE.
 
-Input : the absolute-path split manifests from scripts/build_splits.py (default {work_root}/splits)
+Input : the absolute-path split manifests from scripts/data/build_splits.py (default {work_root}/splits)
 Output: {work_root}/manifests/{merlin,ctrate}.parquet with columns
         dataset, patient_id, scan_id, volume, split, img_rel, seg_rel, report, label_<finding>...
 Labels: CT-RATE from the 18 released columns; Merlin train/val left NaN until report parsing fills them,
@@ -9,7 +9,7 @@ Labels: CT-RATE from the 18 released columns; Merlin train/val left NaN until re
         empty = uncertain), or your own labels in the same layout or in long format (patient_id, finding = label
         column name of vocab.FINDINGS, label, ground_truth; 'Uncertain' rows dropped). Without it they stay NaN.
 
-Usage: python scripts/prepare_manifests.py --env configs/env/local.yaml [--src <dir>] [--merlin_test_labels <parquet>]
+Usage: python scripts/data/prepare_manifests.py --env configs/env/local.yaml [--src <dir>] [--merlin_test_labels <parquet>]
 """
 import argparse
 import os
@@ -18,7 +18,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
 from organic.vocab import FINDINGS, CTRATE_FINDINGS, MERLIN_FINDINGS
 
@@ -39,7 +39,7 @@ def main():
     ap.add_argument('--merlin_test_labels', default=None,
                     help="Merlin test reference labels: the benchmark's merlin_test_labels.csv (see docstring)")
     a = ap.parse_args()
-    cfg = load_config(os.path.join(HERE, '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(HERE, '../../configs/stageA.yaml'), env=a.env)
     a.src = a.src or os.path.join(cfg.paths.work_root, 'splits')
     out = os.path.join(cfg.paths.work_root, 'manifests')
     os.makedirs(out, exist_ok=True)

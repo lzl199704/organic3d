@@ -8,7 +8,7 @@ Labels: RAD-ChestCT's report-derived abnormality x location labels (84 x 52), ma
 A finding is positive if any listed abnormality is positive at any listed location (None = any location).
 Approximate mappings are marked; the 16-label subset used in the literature drops medical material and lymphadenopathy.
 
-    python scripts/prepare_radchest.py --env configs/env/local.yaml
+    python scripts/data/prepare_radchest.py --env configs/env/local.yaml
 Writes {work_root}/manifests/radchest.parquet.
 """
 import argparse
@@ -18,7 +18,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
 from organic.vocab import FINDING_NAMES
 
@@ -52,7 +52,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--env', required=True)
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     root = cfg.paths.radchest_root
     lab = pd.concat([pd.read_csv(f'{root}/data/img{s}_Abnormality_and_Location_Labels.csv').assign(rad_subset=s)
                      for s in ('train', 'valid', 'test')]).set_index('NoteAcc_DEID')

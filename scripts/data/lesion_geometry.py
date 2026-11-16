@@ -1,4 +1,4 @@
-"""Lesion geometry shared by scripts/prepare_heal.py, prepare_side.py and prepare_aa3.py: TotalSegmentator on 1 mm
+"""Lesion geometry shared by scripts/data/prepare_heal.py, prepare_side.py and prepare_aa3.py: TotalSegmentator on 1 mm
 volumes, the largest axial Feret diameter, dilation, and the same-organ control of the lesion-erasure test (LE): the
 lesion's own shape translated inside the same organ, on a 4 mm grid (FFT cross-correlation), valid when >= 70% lies inside
 the parenchyma and < 5% overlaps any lesion dilated 10 mm; among valid translations the nearest one with >= 90% inside

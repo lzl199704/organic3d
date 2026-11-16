@@ -8,7 +8,7 @@ backwards inside the lesion's bounding box so thick original slices leave no gap
 Sanity check printed per category: median HU inside the mapped lesions vs the scan's lung (nodules, consolidation and
 effusion must be denser than lung, emphysema darker); a shifted or flipped mapping would erase that contrast.
 
-    python scripts/prepare_rexgrounding.py --env configs/env/local.yaml --workers 32
+    python scripts/data/prepare_rexgrounding.py --env configs/env/local.yaml --workers 32
 Writes {work_root}/rexground/masks/<volume>.npz (k -> flat 1 mm voxel indices) and {work_root}/rexground/findings.parquet.
 """
 import argparse
@@ -21,7 +21,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import abspath, load_config, read_manifest
 
 REX = None   # ReXGroundingCT release (dataset.json, segmentations/): --rex_root, default <ctrate_root>/ReXGroundingCT
@@ -86,7 +86,7 @@ def main():
     ap.add_argument('--only_missing', action='store_true')
     ap.add_argument('--rex_root', default=None, help='ReXGroundingCT folder (default <ctrate_root>/ReXGroundingCT)')
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     out = os.path.join(cfg.paths.work_root, 'rexground')
     global REX
     REX = a.rex_root or os.path.join(cfg.paths.ctrate_root, 'ReXGroundingCT')

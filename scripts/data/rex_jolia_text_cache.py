@@ -2,9 +2,9 @@
 pooled, as the Jolia adapter's text cache) so the grounding shards need not load the 16 GB text encoder. A separate
 file: the shared Jolia cache is not touched; extaudit/core.py run_grounding merges it into the Jolia adapter's cache.
 
-    CUDA_VISIBLE_DEVICES=0 $ORGANIC3D_BASELINES/jolia/venv/bin/python scripts/rex_jolia_text_cache.py
+    CUDA_VISIBLE_DEVICES=0 $ORGANIC3D_BASELINES/jolia/venv/bin/python scripts/data/rex_jolia_text_cache.py
 Jolia's bundled code is read from $ORGANIC3D_BASELINES/jolia/hf (the HF raidium/Jolia snapshot, extaudit/README.md);
-{work_root} from scripts/workroot.py ($ORGANIC3D_WORK_ROOT, else paths.work_root of $ORGANIC3D_ENV).
+{work_root} from organic/workroot.py ($ORGANIC3D_WORK_ROOT, else paths.work_root of $ORGANIC3D_ENV).
 Writes {work_root}/rexground/jolia_text_cache.pt ({text: float32 (4096,)}).
 """
 import os
@@ -13,14 +13,14 @@ import sys
 import pandas as pd
 import torch
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from extaudit.paths import baseline                         # noqa: E402
 sys.path.insert(0, baseline('jolia', 'hf'))
 from extaudit.models.jolia import QWEN, QWEN_REV, encode_pooled   # noqa: E402
 from text_encoder_jolia import JoliaTextEncoder            # noqa: E402
 
-from workroot import work_root                              # noqa: E402
+from organic.workroot import work_root                              # noqa: E402
 
 W = work_root()
 
