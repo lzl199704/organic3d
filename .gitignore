@@ -3,14 +3,14 @@ configs/env/*.yaml
 !configs/env/TEMPLATE.yaml
 
 # third-party baselines, weights, data, outputs: never commit
-baselines/
-work/
-data/
-logs/
-runs/
-runsB/
-eval/
-evalB/
+/baselines/
+/work/
+/data/
+/logs/
+/runs/
+/runsB/
+/eval/
+/evalB/
 *.pt
 *.pth
 *.ckpt
