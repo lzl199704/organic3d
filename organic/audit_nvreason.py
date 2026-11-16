@@ -40,7 +40,7 @@ def nv_question(f):
 
 class NVPrep:
     """NV-Reason-CT preprocessing only (CPU): its LPS / 2 mm / anatomy crop, applied to image and mask together.
-    With cache_root set, load() reads {cache_root}/{dataset}/{volume}.npz written by scripts/cache_nvreason_inputs.py."""
+    With cache_root set, load() reads precomputed {cache_root}/{dataset}/{volume}.npz inputs."""
 
     def __init__(self, cache_root=None):
         from transformers import AutoProcessor
@@ -159,7 +159,7 @@ class NVReason(NVPrep):
 
 
 def audit_sample(cfg, dset, limit):
-    """The test volumes the audit scores (fixed seed), shared with scripts/cache_nvreason_inputs.py."""
+    """A fixed-seed sample of the test volumes (limit = 0: all)."""
     m = read_manifest(cfg, dset)
     m = m[m.split == 'test']
     if limit:

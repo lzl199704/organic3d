@@ -32,11 +32,11 @@ def matched_pair_auroc(L, s, j):
 
 # ------------------------------------------------------------------ report labellers (generated text -> labels)
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, '..', 'scripts'))
+sys.path.insert(0, os.path.join(_HERE, '..', 'scripts', 'data'))            # parse_reports
 
 
 def merlin_report_labels(texts):
-    """Rule labeller of scripts/label_rules.py (the one used for Merlin training labels) on generated reports."""
+    """Rule labeller of organic/label_rules.py (the one used for Merlin training labels) on generated reports."""
     import pandas as pd
     import parse_reports as pr
     from .data import split_sentences
@@ -51,7 +51,7 @@ def merlin_report_labels(texts):
 
 def ctrate_report_labels(texts):
     """Keyword + NegEx labeller for the 18 CT-RATE findings (same gates as the claim parser); closed world."""
-    import label_rules as lr
+    from . import label_rules as lr
     import parse_reports as pr
     from .data import split_sentences
     out = np.zeros((len(texts), len(FINDING_NAMES)))

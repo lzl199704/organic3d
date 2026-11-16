@@ -2,7 +2,7 @@
 
 Same test volumes (audit_sample, fixed seed), conditions and metric code as the NV-Reason-CT audit and our stage-B
 evaluation (evaluate_stageB.metrics): answer AUROC, LLM-input probe, use, organ-erasure effect, mirror, matched pairs,
-wrong-patient AUROC. Reports are not generated here (QA rungs only); Track B report generation uses MedGemma.generate
+wrong-patient AUROC. Reports are not generated here (QA rungs only); free-text report generation uses MedGemma.generate
 through extaudit/vlm_models/medgemma.py and extaudit/vlm_report.py.
 
 MedGemma's own CT recipe (google-health/medgemma notebooks/high_dimensional_ct_hugging_face.ipynb): 85 axial slices
@@ -215,7 +215,7 @@ def main():
             tab.to_csv(os.path.join(out_dir, f'{dset}_ladder.csv'))
             summary[dset] = summ
             print('SUMMARY', json.dumps({'run': a.name, 'dataset': dset, **summ}), flush=True)
-            # per-scan scores (as evaluate_stageB) for the report-level Track A and paired bootstrap CIs
+            # per-scan scores (as evaluate_stageB) for the finding-based reports and paired bootstrap CIs
             np.savez_compressed(os.path.join(out_dir, f'{dset}_scores.npz'), labels=L[res['index'].numpy()],
                                 volume=m.volume.to_numpy()[res['index'].numpy()].astype(str),
                                 **{k: (v.half() if k == 'feat' else v).numpy() for k, v in res.items() if torch.is_tensor(v)})

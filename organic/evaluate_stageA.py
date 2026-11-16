@@ -236,7 +236,7 @@ def run(cfg, scorer, dataset, limit, fills, rank, world, device, bs):
 
 
 def drop_no_chest(res, lab, conds, work_root):
-    """CT-RATE v2 test set: drop the brain series (organic/ctrate_v2.py), as scripts/extaudit_metrics.py does, so
+    """CT-RATE v2 test set: drop the brain series (organic/ctrate_v2.py), as scripts/metrics/extaudit_metrics.py does, so
     the training evaluator and the harness score the same 3,002 volumes. Scan indices are kept."""
     keep = ~np.isin(res['volume'], list(no_chest_volumes(work_root)))
     if keep.all():
@@ -369,7 +369,7 @@ def main():
 
 
 def write_outputs(out_dir, name, dset, res, lab, conds, fills, min_pos=10):
-    """Ladder table, per-scan scores and summary (shared with scripts/extaudit_metrics.py for released encoders)."""
+    """Ladder table, per-scan scores and summary (shared with scripts/metrics/extaudit_metrics.py for released encoders)."""
     os.makedirs(out_dir, exist_ok=True)
     df = metrics(res, lab, dset, fills, min_pos)
     df.to_csv(os.path.join(out_dir, f'{dset}_ladder.csv'))
