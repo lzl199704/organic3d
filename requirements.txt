@@ -29,3 +29,9 @@ tokenizers==0.23.2
 torchvision==0.29.0
 zstandard==0.19.0
 pytest>=8              # unit tests (tests/)
+
+# ---- Report metrics (scripts/metrics/report_metrics_std.py, report_green.py): a separate environment (Python 3.11,
+# Java 17 on PATH for METEOR), because RadEval needs its own torch / transformers. Versions used for the paper:
+#   pip install RadEval==2.2.1 pycocoevalcap==1.2 torch==2.7.1 transformers==5.20.2 pandas==3.0.6 numpy==2.4.6 \
+#       pyarrow==26.0.0 omegaconf
+# Pass its python to scripts/evaluation/evaluate.py with --report_python.
