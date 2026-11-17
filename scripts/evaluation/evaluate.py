@@ -8,6 +8,8 @@
         [--tests answers,reports]
     # a released model in its own environment: harness steps use --model_python, metric steps this python
     python scripts/evaluation/evaluate.py encoder --model hlip --name HLIP --model_python <hlip env>/bin/python
+    # free-text report metrics need the report environment (requirements-report.txt, Java 17 on PATH)
+    python scripts/evaluation/evaluate.py vlm ... --report_python <report env>/bin/python
     python scripts/evaluation/evaluate.py encoder ... --dry_run      # print the commands only
     python scripts/evaluation/evaluate.py                            # no arguments: asks for them
 
@@ -37,7 +39,7 @@ REPORT_HEAD = {'REPORT_HEAD_CTRATE': 'Trachea', 'REPORT_HEAD_MERLIN': 'Lower tho
 
 def steps(a, root):
     """-> list of (env vars, python, args): harness steps run with the model's python, metric steps with this one."""
-    mp, me = a.model_python, sys.executable
+    mp, me, mr = a.model_python, sys.executable, a.report_python
     h = ['--model', a.model, '--name', a.name, '--root', root] + (['--ckpt', a.ckpt] if a.ckpt else [])
     env = ['--env', a.env]
     out = []
@@ -77,9 +79,9 @@ def steps(a, root):
             elif t == 'reports':
                 out += [(REPORT_HEAD, mp, ['-m', 'extaudit.vlm_report'] + h + ['--dataset', d])
                         for d in ('ctrate', 'merlin')]
-                out += [({}, me, ['scripts/metrics/report_metrics_std.py', '--names', a.name]),
-                        ({}, me, ['scripts/metrics/report_green.py', '--names', a.name, '--max_length', '4096']),
-                        ({}, me, ['scripts/metrics/report_green.py', '--aggregate'])]
+                out += [({}, mr, ['scripts/metrics/report_metrics_std.py', '--names', a.name]),
+                        ({}, mr, ['scripts/metrics/report_green.py', '--names', a.name, '--max_length', '4096']),
+                        ({}, mr, ['scripts/metrics/report_green.py', '--aggregate'])]
     return out
 
 
@@ -96,6 +98,8 @@ def ask(a):
     tests = ENC_TESTS if a.kind == 'encoder' else VLM_TESTS
     a.tests = q(f'Tests ({",".join(tests)})', 'all')
     a.model_python = q("The model environment's python", sys.executable)
+    if a.kind == 'vlm':
+        a.report_python = q("The report environment's python (requirements-report.txt)", sys.executable)
     a.dry_run = q('Only print the commands? (y / n)', 'n').lower().startswith('y')
     return a
 
@@ -110,6 +114,8 @@ def main():
     ap.add_argument('--tests', default='all')
     ap.add_argument('--env', default='configs/env/local.yaml')
     ap.add_argument('--model_python', default=sys.executable, help="python of the model's environment")
+    ap.add_argument('--report_python', default=sys.executable,
+                    help='python of the report environment (requirements-report.txt; Java 17 on PATH for METEOR)')
     ap.add_argument('--dry_run', action='store_true')
     a = ap.parse_args()
     if a.kind is None:
