@@ -31,8 +31,8 @@ cp configs/env/TEMPLATE.yaml configs/env/local.yaml    # fill in the dataset roo
 python -m pytest tests/                                # CPU-only check on synthetic scans, no data needed
 ```
 
-- **Separate environments:** TotalSegmentator v2 (organ masks), the report metrics (`requirements-report.txt`, Java 17
-  on `PATH`) and each released baseline (`extaudit/README.md`).
+- **Separate environments:** TotalSegmentator v2 (organ masks), the report metrics (last section of `requirements.txt`,
+  Java 17 on `PATH`) and each released baseline (`extaudit/README.md`).
 - **GPU:** PyTorch's CUDA 12.6 build (driver ≥ 525) or CUDA 13. One GPU is enough for evaluation; the paper trained the
   encoder on 4 × H100 (22 h) and the VLM on 4 × B200 (4.4 h).
 - **End-to-end check with data:** `ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/setup/smoke_test.sh`.
