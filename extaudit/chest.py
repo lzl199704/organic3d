@@ -1,4 +1,4 @@
-"""--task chest: the chest rungs of organic/evaluate_chest.py (lobe localisation and density-edit specificity) for any
+"""--task chest: the chest rungs of organic/encoder/evaluate_chest.py (lobe localisation and density-edit specificity) for any
 harness encoder (2026-10-24), on the CT-RATE v2 test scans of extaudit/ctrate_chest_set.parquet (scripts/
 prepare_chest_set.py). Same tests and metric code as the stage-A chest evaluator; the edits are made here on the 1 mm
 RAS volume before the model's own preprocessing (as every harness perturbation), not on our 2 mm crop.
@@ -7,7 +7,7 @@ WHERE (scans with lobe sentences). Each sentence template is filled with each of
 and each lobe erased in turn (TotalSegmentator v2 lobes 12, 13, 14, 10, 11 = LOBES order, 2 mm dilation, fat fill
 -100 HU + N(0, 15) as the organ rung). Scores: the five lobe versions on the clean scan (text test) and the true-lobe
 version under each condition (image test).
-WHAT (every scan). Edits (evaluate_chest.edit_masks / calcium_masks, here at 1 mm):
+WHAT (every scan). Edits (organic.encoder.evaluate_chest.edit_masks / calcium_masks, here at 1 mm):
   emph    lung voxels < -950 HU not connected to the trachea's air (trachea dilated 2 mm) -> -860 HU + N(0, 15)
   ca_ao   aortic calcium (>= 130 HU after 3 x 3 x 3 mean filter, < 2000 HU raw, components >= 3 voxels, plus a 1 mm
           rim inside > 0 HU), in the aorta dilated 1 mm (unlabelled or aorta voxels) -> 40 HU + N(0, 15)
@@ -33,7 +33,7 @@ TRACHEA, HEART, AORTA = 16, 51, 52
 
 
 def edit_masks(hu, seg):
-    """1 mm numpy HU and TotalSegmentator ids -> {edit: bool mask}, contrast flag (evaluate_chest rules at 1 mm)."""
+    """1 mm numpy HU and TotalSegmentator ids -> {edit: bool mask}, contrast flag (organic.encoder.evaluate_chest rules at 1 mm)."""
     from scipy import ndimage
     lung = np.isin(seg, LOBE_TS)
     trachea = ndimage.binary_dilation(seg == TRACHEA, iterations=2)

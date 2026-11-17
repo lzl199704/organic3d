@@ -79,10 +79,10 @@ every licence yourself before use. Several are non-commercial.**
 | `omnict` | OmniCT-7B | github.com/alibaba-damo-academy/OmniCT @d9ddc8b | HF `Alibaba-DAMO-Academy/OmniCT-7B`, `google/siglip-so400m-patch14-384` | weights Apache-2.0 (model card); code: no LICENSE file in repo (UNKNOWN) | `omnict/repo`, `omnict/weights/{OmniCT-7B, siglip-so400m-patch14-384}`, `omnict/venv` |
 | `hulu_med` | Hulu-Med-7B | HF remote code (`ZJU-AI4H/Hulu-Med-7B` @258594714a) | same | Apache-2.0 (docstring; LICENSE in local clone of the code repo) | `hulu_med/venv` |
 | `ctchat` | CT-CHAT (yes/no answers and free-text reports) | CT-CHAT code (llava) from the CT-RATE authors | HF `ibrahimhamamci/CT-RATE` (`models/CT-CHAT`), CT-CLIP v2 | CC BY-NC-SA 4.0 (README "License" section; no LICENSE file) | `ctchat/code`, `ctchat/weights`, `ctchat/ctchat_score.py` (not distributed, see open items), `ctchat/venv`; needs `CT-CLIP/` |
-| `medgemma` | MedGemma 1.5 4B (yes/no answers and free-text reports) | `organic/audit_medgemma.py` | HF `google/medgemma-1.5-4b-it` | Health AI Developer Foundations terms (UNKNOWN here, check the model card) | organic env |
-| `organic/audit_medgemma.py` | MedGemma 1.5 4B model wrapper used by the `medgemma` adapter | this repo | as above | as above | organic env |
-| `nv_reason` | NV-Reason-CT through the shared harness (yes/no answers on clean, mirrored and erased scans; reports; the paper's `NV-Reason-CT_h` rows) | wraps `organic/audit_nvreason.py` | HF `nvidia/NV-Reason-CT` | UNKNOWN (check the model card) | organic env |
-| `organic/audit_nvreason.py` | NV-Reason-CT model wrapper (preprocessing, prompts, generation) used by the `nv_reason` adapter | this repo | HF `nvidia/NV-Reason-CT` | UNKNOWN (not stated in the docstring; check the model card) | organic env |
+| `medgemma` | MedGemma 1.5 4B (yes/no answers and free-text reports) | `organic/baselines/medgemma.py` | HF `google/medgemma-1.5-4b-it` | Health AI Developer Foundations terms (UNKNOWN here, check the model card) | organic env |
+| `organic/baselines/medgemma.py` | MedGemma 1.5 4B model wrapper used by the `medgemma` adapter | this repo | as above | as above | organic env |
+| `nv_reason` | NV-Reason-CT through the shared harness (yes/no answers on clean, mirrored and erased scans; reports; the paper's `NV-Reason-CT_h` rows) | wraps `organic/baselines/nv_reason_ct.py` | HF `nvidia/NV-Reason-CT` | UNKNOWN (check the model card) | organic env |
+| `organic/baselines/nv_reason_ct.py` | NV-Reason-CT model wrapper (preprocessing, prompts, generation) used by the `nv_reason` adapter | this repo | HF `nvidia/NV-Reason-CT` | UNKNOWN (not stated in the docstring; check the model card) | organic env |
 
 ## Per-baseline environments
 

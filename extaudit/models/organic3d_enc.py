@@ -5,7 +5,7 @@ extaudit (lesion grounding) run our models through the same code as the released
 as zllhhhh/organic3d-encoder, or a downloaded folder with model.safetensors + config.json), or 'colipri'.
 Input = exactly CTDataset's evaluation path: crop centred on lungs + heart (from the TotalSegmentator mask), 384 mm at
 1 mm, trilinear to 192^3 at 2 mm, HU clipped to [-1000, 1000] / 1000. Scores: our sentence-conditioned score (Delta_f =
-score(present sentence) - score(absent sentence), canonical prompts as in evaluate_stageA), COLIPRI: cosine similarity.
+score(present sentence) - score(absent sentence), canonical prompts as in organic.encoder.evaluate), COLIPRI: cosine similarity.
 """
 import os
 
@@ -14,8 +14,8 @@ import torch
 import torch.nn.functional as F
 
 from organic.config import load_config
-from organic.data import SIZE, SPACING, _LUT, _crop_bounds, crop_center
-from organic.augment import normalise
+from organic.data.dataset import SIZE, SPACING, _LUT, _crop_bounds, crop_center
+from organic.data.interventions import normalise
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ENV = os.environ.get('ORGANIC3D_ENV', os.path.join(HERE, '../../configs/env/local.yaml'))   # data roots (configs/env/TEMPLATE.yaml)
@@ -45,14 +45,14 @@ class Adapter:
             import json                                     # from model.safetensors (scores equal bit for bit)
             from omegaconf import OmegaConf
             from safetensors.torch import load_file
-            from organic.model import build_model
+            from organic.encoder.model import build_model
             d = inference_module().resolve(ckpt)
             cfg = OmegaConf.create({'model': json.load(open(os.path.join(d, 'config.json')))['model']})
             cfg.model.pretrained = False
             self.m = build_model(cfg).to(device).eval()
             self.m.load_state_dict(load_file(os.path.join(d, 'model.safetensors')))
         else:
-            from organic.model import build_model
+            from organic.encoder.model import build_model
             cfg = load_config(os.path.join(os.path.dirname(ckpt), 'config.yaml'), env=ENV)
             cfg.model.pretrained = False
             self.m = build_model(cfg).to(device).eval()

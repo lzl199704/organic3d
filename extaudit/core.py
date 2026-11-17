@@ -12,7 +12,7 @@ the other side of the lungs (only where it overlaps no drawn lesion). Saved: the
 finding scores (Delta_f) on clean / healed lesion / healed control. Grounded = the lesion's healing lowers its own
 sentence more than the control's.
 
-Inputs come from scripts/data/export_audit_set.py (rows = evaluate_stageA's test order). Only numpy / torch / nibabel /
+Inputs come from scripts/data/export_audit_set.py (rows = organic.encoder.evaluate's test order). Only numpy / torch / nibabel /
 pandas are imported here (adapters may import more), so any model env can run it. Metrics: scripts/metrics/extaudit_metrics.py.
 
     CUDA_VISIBLE_DEVICES=0 <model env>/bin/python -m extaudit.core --model ctclip --name CT-CLIP --dataset ctrate \

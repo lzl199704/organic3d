@@ -2,7 +2,7 @@
 generative VLMs, each in its own python env (adapters in extaudit/vlm_models/). Every model gets the same scans (the
 full test set, <dataset>_set.parquet: CT-RATE v2 3,005 rows, 3,002 scored after the non-chest drop; Merlin 5,109), the
 same perturbations (on the 1 mm RAS volume before the model's own preprocessing; fat fill -100 HU + N(0, 15), mask
-dilated 2 mm) and the same metric code (evaluate_stageB.metrics via scripts/metrics/vlm_metrics.py).
+dilated 2 mm) and the same metric code (organic.vlm.evaluate.metrics via scripts/metrics/vlm_metrics.py).
 
 Adapter API (class Adapter(ckpt, device)):
     question(phrase) -> str                 the model's own yes/no question for a finding phrase (default below)

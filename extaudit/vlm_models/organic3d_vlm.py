@@ -10,15 +10,15 @@ is replaced by the one given here).
 Input = CTDataset's evaluation crop (as organic3d_enc.py): centred on lungs + heart (CT-RATE) or the abdominal organs
 (Merlin) from the TotalSegmentator mask, 384 mm at 1 mm, trilinear to 192^3 at 2 mm, HU clipped to [-1000, 1000] / 1000.
 Question = our training question; score = logit(Yes) - logit(No) at the first answer position (as Organic3DVLM.p_yes).
-Free-text report (extaudit/vlm_report.py): our training report prompt (train_stageB.report_prompt) through Organic3DVLM.generate,
-greedy, as evaluate_stageB's --gen path (which capped at 256 new tokens; here the driver's cap).
+Free-text report (extaudit/vlm_report.py): our training report prompt (organic.vlm.train.report_prompt) through Organic3DVLM.generate,
+greedy, as organic.vlm.evaluate's --gen path (which capped at 256 new tokens; here the driver's cap).
 """
 import os
 
 import torch
 
 from organic.config import load_config
-from organic.train_stageB import finding_list, question as our_question, report_prompt as our_report_prompt
+from organic.vlm.train import finding_list, question as our_question, report_prompt as our_report_prompt
 from organic.vocab import FAMILY, FINDING_NAMES, FINDINGS
 from extaudit.models.organic3d_enc import ENV, Adapter as EncAdapter, inference_module
 
@@ -27,7 +27,7 @@ PHRASE_TO_FINDING = {v[2]: k for k, v in FINDINGS.items()}
 
 class Adapter:
     def __init__(self, ckpt, device):
-        from organic.vlm import Organic3DVLM, build_encoder
+        from organic.vlm.model import Organic3DVLM, build_encoder
         run, enc_ckpt = ckpt.split('::') if '::' in ckpt else (ckpt, None)
         if not os.path.exists(os.path.join(run, 'last.pt')):            # released weights (inference script's loader)
             O = inference_module()

@@ -2,7 +2,7 @@
 (extaudit/vlm_report.py). Run in the organic env (transformers 5.x); weights google/medgemma-1.5-4b-it from the
 Hugging Face cache ($HF_HOME if set, else the default ~/.cache/huggingface).
 
-Input = the audit's own CT recipe (organic/audit_medgemma.py, from google-health/medgemma
+Input = the audit's own CT recipe (organic/baselines/medgemma.py, from google-health/medgemma
 notebooks/high_dimensional_ct_hugging_face.ipynb): 85 axial slices sampled uniformly through the 1 mm RAS volume,
 each an RGB image of three windows (-1024..1024, -135..215, 0..80 HU), each followed by "SLICE n"; then the request.
 Prompt: Google publishes no CT report-generation instruction (the CT notebook asks a liver yes/no question with
@@ -17,7 +17,7 @@ import copy
 
 import torch
 
-from organic.audit_medgemma import REGION, MedGemma, slices_rgb
+from organic.baselines.medgemma import REGION, MedGemma, slices_rgb
 
 REPORT_Q = ('Based on the visual evidence in the slices provided above, write the findings section of the radiology '
             'report for this {region} CT.')
@@ -41,7 +41,7 @@ class Adapter:
 
     @staticmethod
     def question(phrase):
-        return f'Is there {phrase} in this CT? Answer Yes or No.'          # = organic.audit_medgemma.question
+        return f'Is there {phrase} in this CT? Answer Yes or No.'          # = organic.baselines.medgemma.question
 
     @torch.no_grad()
     def encode(self, hu):
@@ -51,7 +51,7 @@ class Adapter:
 
     @torch.no_grad()
     def yes_no_logit(self, state, questions):
-        """log P(Yes) - log P(No) at the first answer token (audit_medgemma.MedGemma.p_yes without the sigmoid)."""
+        """log P(Yes) - log P(No) at the first answer token (organic.baselines.medgemma.MedGemma.p_yes without the sigmoid)."""
         mg, (cache, pre_ids) = self.mg, state
         tails = []
         for q in questions:
