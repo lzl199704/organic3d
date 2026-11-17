@@ -36,10 +36,10 @@ sys.path.insert(0, os.path.join(_HERE, '..', 'scripts', 'data'))            # pa
 
 
 def merlin_report_labels(texts):
-    """Rule labeller of organic/label_rules.py (the one used for Merlin training labels) on generated reports."""
+    """Rule labeller of organic/data/label_rules.py (the one used for Merlin training labels) on generated reports."""
     import pandas as pd
     import parse_reports as pr
-    from .data import split_sentences
+    from .data.dataset import split_sentences
     rows = [dict(volume=i, idx=k, text=t, finding='other', polarity='none', organ='other')
             for i, r in enumerate(texts) for k, t in enumerate(split_sentences(r or '.', max_n=80))]
     lab = pr.merlin_labels(pd.DataFrame(rows)).reindex(range(len(texts)))
@@ -51,9 +51,9 @@ def merlin_report_labels(texts):
 
 def ctrate_report_labels(texts):
     """Keyword + NegEx labeller for the 18 CT-RATE findings (same gates as the claim parser); closed world."""
-    from . import label_rules as lr
+    from .data import label_rules as lr
     import parse_reports as pr
-    from .data import split_sentences
+    from .data.dataset import split_sentences
     out = np.zeros((len(texts), len(FINDING_NAMES)))
     out[:, [FINDING_NAMES.index(f) for f in MERLIN_FINDINGS]] = np.nan
     for i, r in enumerate(texts):
