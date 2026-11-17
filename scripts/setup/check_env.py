@@ -45,11 +45,13 @@ def imports():
     for m in mods:
         importlib.import_module(m)
     sys.path.insert(0, os.path.join(HERE, '..', '..'))
-    for m in ['organic.vocab', 'organic.config', 'organic.data', 'organic.augment', 'organic.model', 'organic.losses',
-              'organic.train_stageA', 'organic.evaluate_stageA', 'organic.vlm', 'organic.train_stageB',
-              'organic.evaluate_stageB', 'organic.ladder', 'organic.audit_nvreason']:
+    proj = ['organic.vocab', 'organic.config', 'organic.utils', 'organic.metrics', 'organic.data.dataset',
+            'organic.data.interventions', 'organic.encoder.model', 'organic.encoder.losses', 'organic.encoder.train',
+            'organic.encoder.evaluate', 'organic.vlm.model', 'organic.vlm.train', 'organic.vlm.evaluate',
+            'organic.baselines.nv_reason_ct']
+    for m in proj:
         importlib.import_module(m)
-    return f'{len(mods)} packages and 13 project modules import'
+    return f'{len(mods)} packages and {len(proj)} project modules import'
 
 
 def kernels():

@@ -100,10 +100,10 @@ def main():
         import torch
         torch.set_num_threads(min(16, os.cpu_count() or 4))
         from colipri import get_processor
-        from organic.augment import build_image_batch, plan_counterfactuals
-        from organic.data import CTDataset, MixedBatchSampler, collate, load_manifests, load_sentences
-        from organic.model import build_model
-        from organic.train_stageA import build_text
+        from organic.data.interventions import build_image_batch, plan_counterfactuals
+        from organic.data.dataset import CTDataset, MixedBatchSampler, collate, load_manifests, load_sentences
+        from organic.encoder.model import build_model
+        from organic.encoder.train import build_text
         c = load_config(os.path.join(HERE, '../../configs/stageA.yaml'), env=a.env, overrides=['data.limit=400'])
         sents = load_sentences(c)
         ds = CTDataset(c, load_manifests(c, 'train'), train=True, sentences=sents)
