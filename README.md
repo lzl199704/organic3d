@@ -4,64 +4,148 @@
 
 [Paper](<PAPER_URL>) · [Benchmark](https://huggingface.co/datasets/zllhhhh/organic3d-benchmark) · [Encoder weights](https://huggingface.co/zllhhhh/organic3d-encoder) · [VLM weights](https://huggingface.co/zllhhhh/organic3d-vlm)
 
-ORGANIC-3D (ORGAN-level Image-text Coupling in 3D) tests whether the predictions of 3D CT vision–language models follow
-the image evidence for each finding, and trains an encoder and a VLM to do so. This repository holds the code to train
-both models, the evaluation harness that scores our models and the released baselines under the same interventions,
-and the scripts that compute every metric of the paper.
+ORGANIC-3D tests whether a 3D CT model's prediction for a finding comes from the image evidence for that finding, and
+trains an encoder and a VLM that pass these tests. This repository has the training code, the evaluation harness that
+runs our models and 18 released models under the same interventions, and the scripts behind every table of the paper.
 
 <p align="center"><img src="docs/assets/fig1_tests.png" width="430" alt="The alignment tests"></p>
-<p align="center"><em>Alignment tests with expected responses.</em></p>
+<p align="center"><em>The alignment tests and their expected responses.</em></p>
 
-- **Tests** (`docs/metrics.md`): classification (MLC-AUROC; lesion AUROC; zero-shot tumour detection), clinical finding
-  independence (matched-pair AUROC, MP), organ dependence (organ-erasure ΔAUROC, OE; for VLMs the organ-erasure hit
-  rate, OEH), laterality (Side) and the lung lobe erasure hit rate (LL), and lesion erasure (LE). Every organ or lesion
-  edit is compared with the same edit of a control organ or region.
-- **Encoder**: the COLIPRI 3D ViT read through 144 anatomy queries (16 organ groups × 8, plus 16 global); each sentence
-  is routed to the tokens of the organs it names and pooled with text-conditioned weights. Trained with the contrastive
-  loss and the ORGANIC losses (organ-erasure, mirror, matched-pair and anatomy-attention losses).
-- **VLM**: the frozen encoder's 144 anatomy tokens, in a fixed organ order, feed Qwen3.5-4B (LoRA) through an MLP.
-  Trained with the dependence margin, the answer-attention loss and answer-first reports.
-- **Datasets**: CT-RATE and Merlin (training and test), RAD-ChestCT (external), ReXGroundingCT (radiologist lesion masks
-  on CT-RATE test scans) and AbdomenAtlas 3.0 (IID test split).
+## Contents
 
-![ORGANIC-3D overview](docs/assets/fig2_method.png)
-*ORGANIC-3D Overview.
-([PDF](docs/assets/fig2_method.pdf))*
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Data](#data)
+- [Evaluate a model](#evaluate-a-model)
+- [Train](#train)
+- [Results](#results)
+- [Repository layout](#repository-layout)
+- [Citation and licence](#citation-and-licence)
 
-## Requirements
-
-- **Software**: Linux, Python 3.10–3.12, PyTorch 2.14 with CUDA 12 (driver ≥ 525), and the packages in
-  `requirements.txt` (pinned versions used for the paper; transformers 5.17, peft 0.21, MONAI 1.5, COLIPRI 0.1.3).
-  TotalSegmentator v2 runs in its own environment, as does each released baseline (`extaudit/README.md`).
-- **Hardware**: the encoder was trained on 4 × H100 80 GB (12,000 steps, about 22 h) and the VLM on 4 × B200
-  (10,000 steps, about 4.4 h); evaluation runs on a single GPU.
+## Install
 
 ```bash
-ENV_DIR=/path/to/env bash scripts/setup/setup_env.sh        # conda env: Python 3.12, PyTorch (CUDA 12.6), requirements.txt
-python scripts/setup/check_env.py                           # versions and imports, no GPU needed
-cp configs/env/TEMPLATE.yaml configs/env/local.yaml   # then fill in the dataset roots and the work root
-python -m pytest tests/                               # unit tests, CPU only
+git clone https://github.com/lzl199704/organic3d && cd organic3d
+ENV_DIR=/path/to/env bash scripts/setup/setup_env.sh   # Python 3.12, PyTorch 2.14, requirements.txt; ends with an env check
+cp configs/env/TEMPLATE.yaml configs/env/local.yaml    # fill in the dataset roots and the work root
+python -m pytest tests/                                # CPU-only check on synthetic scans, no data needed
 ```
 
-### Check the installation
+- **Separate environments:** TotalSegmentator v2 (organ masks), the report metrics (`requirements-report.txt`, Java 17
+  on `PATH`) and each released baseline (`extaudit/README.md`).
+- **GPU:** PyTorch's CUDA 12.6 build (driver ≥ 525) or CUDA 13. One GPU is enough for evaluation; the paper trained the
+  encoder on 4 × H100 (22 h) and the VLM on 4 × B200 (4.4 h).
+- **End-to-end check with data:** `ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/setup/smoke_test.sh`.
 
-- **Without GPU or data:** `python -m pytest tests/` runs unit tests of the code (losses, edits, organ routing, metrics
-  and the harness end to end) on synthetic scans with random weights (`tests/README.md`).
-- **GPU (needs the prepared data):** `ENV=configs/env/local.yaml GPUS=0,1,2,3 bash scripts/setup/smoke_test.sh` trains and
-  evaluates both models for a few steps on 1 and on several GPUs, including resuming. A quicker check with the released
-  weights is the one-CT demo (`demo/organic3d_demo.py`, see Evaluation).
+## Quick start
+
+Run the alignment tests on one CT for any sentence that names an organ. The released weights download automatically.
+
+```bash
+python demo/organic3d_demo.py --ct ct.nii.gz --seg seg.nii.gz --region abdomen \
+    --sentence "There is a 9.8 cm mass in the left kidney." --out example.png
+python demo/organic3d_demo.py --app        # interactive web interface (pip install gradio matplotlib)
+```
+
+<p align="center"><img src="docs/assets/example_left_kidney.gif" alt="The tests on one CT, step by step"></p>
+
+*The sentence is scored on the original scan, after erasing the organ it names (target), after the same edit of another
+organ (control) and with left and right swapped. AbdomenAtlas 3.0 test scan BDMAP_00002434 (CC BY-NC-SA 4.0).*
+
+Scores and reports for your own scan:
+
+```bash
+python scripts/inference/organic3d.py encoder --ct scan.nii.gz --region chest --totalseg            # finding and sentence scores
+python scripts/inference/organic3d.py vlm --ct scan.nii.gz --region chest --totalseg --report      # yes/no answers and a report
+```
+
+## Data
+
+No data is distributed here; get each dataset from its source under its terms.
+
+| Dataset | Use | Source |
+|---|---|---|
+| CT-RATE | chest training and test (v2 test set, 3,002 scans) | Hugging Face `ibrahimhamamci/CT-RATE` |
+| Merlin | abdominal training and test (5,109 studies) | Stanford AIMI |
+| RAD-ChestCT | external chest test (3,630 scans) | Zenodo 6406114 |
+| ReXGroundingCT | radiologist lesion masks on CT-RATE test scans | Hugging Face `rajpurkarlab/ReXGroundingCT` |
+| AbdomenAtlas 3.0 | IID test split (926 scans) | Hugging Face `AbdomenAtlas/AbdomenAtlas3.0Mini` |
+
+Preparation steps: [`docs/data_preparation.md`](docs/data_preparation.md). The paper's Merlin test labels are on the
+[benchmark page](https://huggingface.co/datasets/zllhhhh/organic3d-benchmark) (`protocol/files/merlin_test_labels.csv`).
+
+## Evaluate a model
+
+```mermaid
+flowchart LR
+  D["Test sets<br/>CT-RATE · RAD-ChestCT · Merlin<br/>ReXGroundingCT · AbdomenAtlas 3.0"] --> H
+  M["Your model<br/>(adapter)"] --> H["Harness<br/>clean scan · organ and lesion erasure<br/>control edits · side swap"]
+  H --> S["Per-scan scores"] --> E["Metric scripts<br/>MLC-AUROC · MP · OE · OEH<br/>Side · LL · LE · reports"] --> T["Tables 1–3"]
+```
+
+One command runs every test and metric of the paper for one model:
+
+```bash
+python scripts/evaluation/evaluate.py encoder --model organic3d_enc --ckpt zllhhhh/organic3d-encoder --name enc4_organic3d
+python scripts/evaluation/evaluate.py vlm --model organic3d_vlm --ckpt zllhhhh/organic3d-vlm --name vlm4_organic3d \
+    --report_python <report env>/bin/python
+```
+
+| Option | Values |
+|---|---|
+| `--tests` | encoder: `mlc`, `ll`, `side`, `lesion`, `tumour`, `le`; VLM: `answers`, `reports` (default: all) |
+| `--model_python` | python of a released model's own environment (harness steps) |
+| `--report_python` | python of the report environment (free-text report metrics) |
+| `--dry_run` | print the steps without running them |
+
+Scores go to `{work_root}/extaudit/`, metrics to `{work_root}/eval/`. To test a new model, write an adapter
+([`docs/adapter_guide.md`](docs/adapter_guide.md)); metric definitions are in [`docs/metrics.md`](docs/metrics.md).
+
+## Train
+
+Each model of the paper has one config; its file name is the run id used for the outputs.
+
+| Model (Table 4) | Config |
+|---|---|
+| Encoder: COLIPRI + fine-tuning | `configs/encoder/enc1_finetune.yaml` |
+| + anatomy queries | `configs/encoder/enc2_queries.yaml` |
+| + organ routing | `configs/encoder/enc3_routing.yaml` |
+| + ORGANIC losses = **ORGANIC-3D** | `configs/encoder/enc4_organic3d.yaml` |
+| VLM: plain fine-tuning | `configs/vlm/vlm1_plain.yaml` |
+| + attention loss | `configs/vlm/vlm2_attention.yaml` |
+| + dependence loss | `configs/vlm/vlm3_dependence.yaml` |
+| + answer-first = **ORGANIC-3D VLM** | `configs/vlm/vlm4_organic3d.yaml` |
+
+```bash
+# encoder: 4 GPUs, 12,000 steps
+torchrun --nproc_per_node 4 -m organic.encoder.train --env configs/env/local.yaml --ablation configs/encoder/enc4_organic3d.yaml
+# VLM on the frozen encoder ({work_root}/runs/enc4_organic3d/last.pt): 4 GPUs, 10,000 steps
+torchrun --nproc_per_node 4 -m organic.vlm.train --env configs/env/local.yaml --ablation configs/vlm/vlm4_organic3d.yaml
+```
+
+Override any config value with `key=value` (e.g. `train.max_steps=100`). Outputs: `{work_root}/runs/<run id>/`
+(encoder) and `{work_root}/runsB/<run id>/` (VLM).
 
 ## Results
 
-All values in %. Bold: best; <u>underlined</u>: second best. Metric definitions: `docs/metrics.md`.
+![ORGANIC-3D overview](docs/assets/fig2_method.png)
+*Method overview ([PDF](docs/assets/fig2_method.pdf)). Encoder: COLIPRI's 3D ViT read by 144 anatomy queries; each
+sentence reads the queries of the organs it names; trained with the organ-erasure, mirror, matched-pair and
+anatomy-attention losses. VLM: the anatomy tokens feed Qwen3.5-4B, trained with the dependence and attention losses
+and answer-first reports.*
 
-### Table 1. Encoders
+All values in %; bold: best, <u>underlined</u>: second best. Click a table to expand it.
 
-Classification: AUROC, mean over each dataset's findings, on CTR (CT-RATE), RAD (RAD-ChestCT), MER (Merlin), MER-r (the
-released Merlin labels) and ReX (ReXGroundingCT); AA3: zero-shot tumor detection on AbdomenAtlas 3.0. Alignment:
-matched-pair AUROC (MP), organ-erasure ΔAUROC (OE), laterality accuracy (Side) and CT-RATE lung lobe erasure hit rate
-(LL). LE: lesion-erasure hit rate. COLIPRI-FT: the COLIPRI backbone fine-tuned on the same public data, without the
-ORGANIC losses.
+<details>
+<summary><b>Table 1. Encoders</b>: best on every classification set and every alignment test, except Merlin OE, where
+the mask-gated RADAR+ Merlin-only leads.</summary>
+
+<br>
+
+Classification AUROC on CTR (CT-RATE), RAD (RAD-ChestCT), MER (Merlin; MER-r: the released Merlin labels) and ReX
+(ReXGroundingCT); AA3: zero-shot tumour detection on AbdomenAtlas 3.0. MP: matched-pair AUROC; OE: organ-erasure
+ΔAUROC; Side: laterality accuracy; LL: lung lobe erasure hit rate; LE: lesion-erasure hit rate. COLIPRI-FT: COLIPRI
+fine-tuned on the same public data, without our anatomy queries, routing and losses.
 
 | Model | CTR | RAD | MER | MER-r | ReX | AA3 tumor | CTR MP | CTR OE | CTR Side | CTR LL | RAD MP | RAD OE | MER MP | MER OE | MER Side | LE ReX | LE AA3 |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
@@ -84,10 +168,16 @@ ORGANIC losses.
 † organ masks at test time; ‡ fine-tuned on the same public data; other released encoders use no organ masks.
 ¶ AbdomenAtlas images are in SPECTRE's pretraining.
 
-### Table 2. VLMs: visual question answering
+</details>
 
-Full CT-RATE (3,002) and Merlin (5,109) test sets and 464 ReXGroundingCT scans. Answer AUROC, balanced accuracy (BACC)
-and F1 of the stated answers; matched-pair AUROC (MP) and organ-erasure hit rate (OEH).
+<details>
+<summary><b>Table 2. VLM question answering</b>: OEH 96–99 vs at most 69 for released VLMs; level with NV-Reason-CT on
+CT-RATE answer AUROC and ahead on Merlin and ReXGroundingCT.</summary>
+
+<br>
+
+Full CT-RATE (3,002) and Merlin (5,109) test sets and 464 ReXGroundingCT scans. AUROC, balanced accuracy (BACC) and F1
+of the stated answers; MP: matched-pair AUROC; OEH: organ-erasure hit rate.
 
 | Model | CT-RATE AUROC | CT-RATE BACC | CT-RATE F1 | CT-RATE MP | CT-RATE OEH | Merlin AUROC | Merlin BACC | Merlin F1 | Merlin MP | Merlin OEH | ReXGroundingCT AUROC | ReXGroundingCT BACC | ReXGroundingCT F1 | ReXGroundingCT MP | ReXGroundingCT OEH |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
@@ -101,10 +191,15 @@ and F1 of the stated answers; matched-pair AUROC (MP) and organ-erasure hit rate
 | Ours, plain fine-tuning | 82.1 | 72.3 | 52.2 | 76.1 | 30.7 | <u>81.3</u> | <u>68.2</u> | <u>32.9</u> | <u>80.5</u> | <u>46.6</u> | 75.4 | 65.3 | 44.3 | 67.7 | 39.1 |
 | **ORGANIC-3D VLM (ours)** | **86.3** | **78.9** | <u>58.7</u> | **82.8** | **96.8** | **87.6** | **80.0** | **40.6** | **86.0** | **96.2** | **79.5** | **72.1** | **49.0** | **74.1** | **98.9** |
 
-### Table 3. Report generation
+</details>
 
-CT-RATE and Merlin test sets. Free-text report: finding accuracy (F1, CRG) and similarity to the reference (GREEN,
-RadGraph F1). Finding-based report: F1 and image-attributable F1 (IA-F1).
+<details>
+<summary><b>Table 3. Report generation</b>: best free-text finding F1 and CRG on both datasets.</summary>
+
+<br>
+
+Free-text report: F1 and CRG of the findings extracted from it, GREEN and RadGraph F1 against the reference.
+Finding-based report: F1 and image-attributable F1 (IA-F1).
 
 **CT-RATE**
 
@@ -117,7 +212,7 @@ RadGraph F1). Finding-based report: F1 and image-attributable F1 (IA-F1).
 | RadFM | 7.0 | 33.6 | 1.1 | 0.7 | 31.7 | 1.8 |
 | CT-CHAT | 17.3 | 37.0 | **46.9** | <u>24.9</u> | 40.5 | 13.0 |
 | NV-Reason-CT | <u>56.5</u> | <u>49.6</u> | 40.6 | 18.1 | **60.0** | <u>37.3</u> |
-| **ORGANIC-3D (ours)** | **56.8** | **52.9** | <u>41.9</u> | 21.5 | <u>59.6</u> | **37.6** |
+| **ORGANIC-3D VLM (ours)** | **56.8** | **52.9** | <u>41.9</u> | 21.5 | <u>59.6</u> | **37.6** |
 
 **Merlin**
 
@@ -130,12 +225,18 @@ RadGraph F1). Finding-based report: F1 and image-attributable F1 (IA-F1).
 | RadFM | 0.8 | 33.4 | 0.3 | 0.4 | 17.5 | 1.2 |
 | CT-CHAT | 1.1 | 33.6 | 3.4 | 3.4 | 17.5 | 0.9 |
 | NV-Reason-CT | <u>26.2</u> | <u>38.9</u> | 19.2 | <u>19.1</u> | <u>32.0</u> | <u>20.2</u> |
-| **ORGANIC-3D (ours)** | **37.7** | **49.4** | **28.9** | **31.8** | **48.2** | **37.4** |
+| **ORGANIC-3D VLM (ours)** | **37.7** | **49.4** | **28.9** | **31.8** | **48.2** | **37.4** |
 
-### Table 4. Ablations
+</details>
 
-COLIPRI and plain fine-tuning compared with the anatomy-aware design, for the encoder and the VLM. OE: organ-erasure
-ΔAUROC, computed on the finding score Δf for the encoder and on P(Yes) for the VLM. Configs for each row: see Training.
+<details>
+<summary><b>Table 4. Ablations</b>: anatomy queries and routing add laterality; the ORGANIC losses double the
+organ-erasure ΔAUROC; answer-first training recovers report F1.</summary>
+
+<br>
+
+OE is computed on the finding score Δf for the encoder and on P(Yes) for the VLM. The config of each row is listed
+under [Train](#train).
 
 | Encoder | MLC CTR | MLC MER | MLC RAD | Lesion ReX | Tumor AA3 | OE CTR | OE MER | Side CTR | Side MER |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
@@ -152,155 +253,36 @@ COLIPRI and plain fine-tuning compared with the anatomy-aware design, for the en
 | + dependence loss | **86.4** | <u>87.3</u> | 19.8 | 10.9 | <u>82.1</u> | **86.5** | <u>21.4</u> | **23.6** |
 | + answer-first (final) | <u>86.3</u> | **87.6** | **56.8** | **37.7** | **82.8** | <u>86.0</u> | **28.1** | <u>22.2</u> |
 
-### Evidence maps
+</details>
+
+<details>
+<summary><b>Evidence maps</b>: where each encoder's score comes from.</summary>
+
+<br>
 
 ![Evidence maps](docs/assets/fig3_evidence_maps.png)
-*Occlusion sensitivity for nine findings (columns) and ORGANIC-3D and released encoders (rows). Brighter: removing the
-region lowers the finding's score more; each map is scaled to its own maximum. Cyan: annotated lesion.
-([PDF](docs/assets/fig3_evidence_maps.pdf))*
+*Occlusion sensitivity for nine findings (columns) and eight encoders (rows). Brighter: removing the region lowers the
+finding's score more. Cyan: annotated lesion. ([PDF](docs/assets/fig3_evidence_maps.pdf))*
+
+</details>
 
 ## Repository layout
 
 ```
-organic/
-  data/        dataset, organ masks, interventions (erasure, mirror, text edits), report label rules
-  encoder/     ORGANIC-3D encoder: model, organ routing, losses, training, evaluation
-  vlm/         ORGANIC-3D VLM: model, training, evaluation
-  baselines/   NV-Reason-CT and MedGemma wrappers used by the harness adapters
-  vocab.py, config.py, metrics.py, utils.py   organs and findings, configs, shared metrics, distributed helpers
-extaudit/    evaluation harness and adapters for the released models
-scripts/
-  setup/       environment checks and smoke tests
-  data/        dataset preparation and the benchmark sets
-  train/       training launchers
-  evaluation/  one-command evaluation of a model, score export for the benchmark
-  metrics/     the metric scripts behind every table (full test sets)
-  analysis/    attention-map analyses
-  inference/   ORGANIC-3D on a CT (also ships with the weights)
-configs/     training configs, one per model in the paper
-demo/        alignment tests on one CT, with an interactive interface
-docs/        data preparation, metric definitions, adding a new model
-tests/       unit tests of the code (CPU, synthetic data)
+organic/        ORGANIC-3D package: data/ (dataset, interventions), encoder/, vlm/, baselines/ (wrappers)
+extaudit/       evaluation harness and adapters for the released models
+scripts/        setup/, data/, train/, evaluation/, metrics/, analysis/, inference/  (scripts/README.md)
+configs/        one config per model of the paper
+demo/           alignment tests on one CT, with an interactive interface
+docs/           data preparation, metric definitions, adding a new model
+tests/          CPU unit tests on synthetic data
 ```
 
-## Data
-
-Obtain each dataset from its official source under its terms; nothing from any dataset is distributed here.
-
-| Dataset | Use | Source |
-|---|---|---|
-| CT-RATE | chest training and test (v2 test set, 3,002 scans) | Hugging Face `ibrahimhamamci/CT-RATE` |
-| Merlin | abdominal training and test (5,109 studies) | Stanford AIMI |
-| RAD-ChestCT | external chest test (3,630 scans) | Zenodo 6406114 |
-| ReXGroundingCT | radiologist lesion masks on CT-RATE test scans | Hugging Face `rajpurkarlab/ReXGroundingCT` |
-| AbdomenAtlas 3.0 | IID test split (926 scans) | Hugging Face `AbdomenAtlas/AbdomenAtlas3.0Mini` |
-
-The steps (1 mm resampling, TotalSegmentator masks, splits, report sentences, the 2 mm training cache, the test sets
-and the harness sets) are in `docs/data_preparation.md`. The Merlin test labels of the paper (re-extracted
-from the reports with LLMs, Sec. 4.1) are on the benchmark page (`protocol/files/merlin_test_labels.csv`); pass them with
-`scripts/data/prepare_manifests.py --merlin_test_labels merlin_test_labels.csv`.
-
-## Training
-
-Each model of the paper has one config. Its file name is the run id, which also names the training outputs and the
-evaluation results; `enc1`–`enc4` and `vlm1`–`vlm4` follow the rows of Table 4.
-
-| Model (paper, Table 4) | Config | Run id |
-|---|---|---|
-| Encoder: COLIPRI + fine-tuning | `configs/encoder/enc1_finetune.yaml` | `enc1_finetune` |
-| + anat. queries | `configs/encoder/enc2_queries.yaml` | `enc2_queries` |
-| + organ routing | `configs/encoder/enc3_routing.yaml` | `enc3_routing` |
-| + ORGANIC = **ORGANIC-3D** | `configs/encoder/enc4_organic3d.yaml` | `enc4_organic3d` |
-| VLM: plain fine-tuning | `configs/vlm/vlm1_plain.yaml` | `vlm1_plain` |
-| + attention loss | `configs/vlm/vlm2_attention.yaml` | `vlm2_attention` |
-| + dependence loss | `configs/vlm/vlm3_dependence.yaml` | `vlm3_dependence` |
-| + answer-first = **ORGANIC-3D VLM** | `configs/vlm/vlm4_organic3d.yaml` | `vlm4_organic3d` |
-| vlm4 recipe on enc3, the encoder without the ORGANIC losses (not in Table 4) | `configs/vlm/vlm4_organic3d_on_enc3.yaml` | `vlm4_organic3d_on_enc3` |
-
-```bash
-# encoder: 4 GPUs, batch 4 per GPU, 12,000 steps
-torchrun --nproc_per_node 4 -m organic.encoder.train --env configs/env/local.yaml --ablation configs/encoder/enc4_organic3d.yaml
-# VLM on the frozen encoder ({work_root}/runs/enc4_organic3d/last.pt): 4 GPUs, 10,000 steps
-torchrun --nproc_per_node 4 -m organic.vlm.train --env configs/env/local.yaml --ablation configs/vlm/vlm4_organic3d.yaml
-```
-
-Any config value can be overridden on the command line (`key=value`, e.g. `train.max_steps=100`). Wrappers:
-`scripts/train/launch_local.sh`, `scripts/train/launch_stageB_local.sh`, `scripts/train/launch_multinode.sh`. Before a long run:
-`python scripts/setup/preflight_cpu.py --env configs/env/local.yaml` and `bash scripts/setup/smoke_test.sh`. On Python 3.10,
-`python scripts/setup/patch_triton_py310.py` fixes the Triton kernels of Qwen3.5's linear attention. Outputs:
-`{work_root}/runs/<run>/` (encoder) and `{work_root}/runsB/<run>/` (VLM: LoRA, projector).
-
-## Evaluation
-
-### Try it on one CT
-
-`demo/organic3d_demo.py` runs the alignment tests on a single scan for any sentence that names an organ. It scores the
-sentence on the original scan, after erasing the organ the sentence names (target), after the same edit of an organ it
-does not name (control), and with left and right swapped:
-
-```bash
-python demo/organic3d_demo.py --ct ct.nii.gz --seg seg.nii.gz --region abdomen \
-    --sentence "There is a 9.8 cm mass in the left kidney." --out example.png
-python demo/organic3d_demo.py --app        # the same in an interactive web interface (pip install gradio matplotlib)
-```
-
-<p align="center"><img src="docs/assets/example_left_kidney.gif" alt="The tests on one CT, step by step"></p>
-
-*AbdomenAtlas 3.0 test scan BDMAP_00002434 (CC BY-NC-SA 4.0), coronal view. The script also writes this as one summary
-image (`--out`) and the scores as JSON.*
-
-### Evaluate a model on the benchmark
-
-One command runs every harness step and metric of the paper for one model:
-
-```mermaid
-flowchart LR
-  D["Test sets<br/>CT-RATE · RAD-ChestCT · Merlin<br/>ReXGroundingCT · AbdomenAtlas 3.0"] --> H
-  M["Your model<br/>(adapter)"] --> H["Harness<br/>clean scan · organ and lesion erasure<br/>control edits · side swap"]
-  H --> S["Per-scan scores"] --> E["Metric scripts<br/>MLC-AUROC · MP · OE · OEH<br/>Side · LL · LE · reports"] --> T["Tables 1–3"]
-```
-
-```bash
-python scripts/evaluation/evaluate.py encoder --model organic3d_enc --ckpt zllhhhh/organic3d-encoder --name enc4_organic3d
-python scripts/evaluation/evaluate.py vlm --model organic3d_vlm --ckpt zllhhhh/organic3d-vlm --name vlm4_organic3d
-```
-
-| Option | Values |
-|---|---|
-| `--tests` (encoder) | `mlc` (MLC-AUROC, MP, OE), `ll`, `side`, `lesion`, `tumour`, `le`; default all |
-| `--tests` (VLM) | `answers` (AUROC, BACC, F1, MP, OEH), `reports` (free-text and finding-based reports); default all |
-| `--model_python` | the python of a released model's own environment (`extaudit/README.md`); metrics run in this one |
-| `--dry_run` | print the commands without running them |
-
-`--ckpt` takes the released weights (a Hugging Face repo id or a downloaded folder) or a training checkpoint
-(`<work_root>/runs/<run id>/last.pt`; VLM: `<work_root>/runsB/<run id>::<encoder last.pt>`); both give the paper's scores
-exactly. Without arguments, `python scripts/evaluation/evaluate.py` asks for each option. Scores go to `{work_root}/extaudit/out*/<name>/`
-and metrics to `{work_root}/eval/`. To add a new model, write an adapter (`docs/adapter_guide.md`); metric definitions
-are in `docs/metrics.md`.
-
-The supplementary analyses run through the same harness: fills that no training step uses
-(`python -m extaudit.core ... --fills water,median,blur`, `python -m extaudit.vlm_core ... --fills median --no_mirror`,
-then `scripts/metrics/oeh_breakdown.py`) and the evidence maps of Figure 3 (`--task occlusion`).
-
-## Inference
-
-```bash
-python scripts/inference/organic3d.py encoder --ct scan.nii.gz --region chest --totalseg            # finding and sentence scores
-python scripts/inference/organic3d.py vlm --ct scan.nii.gz --region chest --totalseg --report      # yes/no answers and a report
-```
-
-`scripts/inference/organic3d.py` is the same script that ships with the weights (Hugging Face `zllhhhh/organic3d-encoder`,
-`zllhhhh/organic3d-vlm`): 1 mm RAS resampling, crop
-centre from TotalSegmentator, then the encoder and the VLM.
-
-## Citation
+## Citation and licence
 
 ```bibtex
 <CITATION>
 ```
 
-## Licence
-
 Code: Apache-2.0 (`LICENSE`). Datasets, released baselines and our weights keep their own terms (CT-RATE and
-AbdomenAtlas 3.0 CC BY-NC-SA 4.0; Merlin, RAD-ChestCT and ReXGroundingCT under their providers' terms). Not for
-clinical use.
+AbdomenAtlas 3.0: CC BY-NC-SA 4.0; Merlin, RAD-ChestCT and ReXGroundingCT: their providers' terms). Not for clinical use.
