@@ -98,7 +98,7 @@ def crop_centre(hu, region, seg=None):
     """Crop centre (1 mm voxel coordinates). seg: TotalSegmentator v2 multilabel mask on the 1 mm grid, or None.
     Without a mask (approximation): chest = centroid of the air inside the body (the lungs), abdomen = centroid of the
     body (largest region above -500 HU, holes filled per slice), each plus FALLBACK_OFFSET."""
-    from organic.data import _LUT, crop_center
+    from organic.data.dataset import _LUT, crop_center
     if seg is not None:
         return crop_center(_LUT[seg], DATASET[region])
     from scipy import ndimage
@@ -120,8 +120,8 @@ def crop_centre(hu, region, seg=None):
 
 def model_input(hu, centre, device):
     """1 mm HU volume + crop centre -> (1, 1, 192, 192, 192) input (as the evaluation harness)."""
-    from organic.augment import normalise
-    from organic.data import SIZE, SPACING, _crop_bounds
+    from organic.data.interventions import normalise
+    from organic.data.dataset import SIZE, SPACING, _crop_bounds
     bounds = _crop_bounds(centre, hu.shape, int(SIZE * SPACING))
     t = torch.as_tensor(hu, device=device)
     out = torch.full([b - a for a, b in bounds], -1000.0, device=device)
@@ -141,7 +141,7 @@ class Encoder:
         from colipri import get_model, get_processor
         from omegaconf import OmegaConf
         from safetensors.torch import load_file
-        from organic.model import Organic3D
+        from organic.encoder.model import Organic3D
         d = resolve(weights)
         self.cfg = json.load(open(os.path.join(d, 'config.json')))
         self.dev = torch.device(device)
@@ -199,7 +199,7 @@ class VLM:
         from huggingface_hub import snapshot_download
         from omegaconf import OmegaConf
         from safetensors.torch import load_file
-        from organic.vlm import Organic3DVLM
+        from organic.vlm.model import Organic3DVLM
         d = resolve(weights)
         self.cfg = json.load(open(os.path.join(d, 'config.json')))
         self.enc = encoder if isinstance(encoder, Encoder) else Encoder(encoder or ENCODER_REPO, device)
@@ -225,7 +225,7 @@ class VLM:
 
     @staticmethod
     def question(f_or_phrase):
-        from organic.train_stageB import question
+        from organic.vlm.train import question
         from organic.vocab import FINDINGS
         if f_or_phrase in FINDINGS:
             return question(f_or_phrase)
@@ -251,7 +251,7 @@ class VLM:
     @torch.no_grad()
     def report(self, V, region, max_new_tokens=768, head=True):
         """Answer-first report: (finding list, report). The report starts with REPORT_HEAD[region] (head=True)."""
-        from organic.train_stageB import finding_list, report_prompt
+        from organic.vlm.train import finding_list, report_prompt
         ans = self.finding_answers(V, region)
         pre = finding_list([f for f, p in ans.items() if p >= 0.5])
         h = REPORT_HEAD[region] if head else ''
