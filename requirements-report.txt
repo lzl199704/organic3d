@@ -1,0 +1,10 @@
+# Free-text report metrics (scripts/metrics/report_metrics_std.py, report_green.py), in a separate environment
+# (Python 3.11). METEOR also needs Java 17 on PATH. Versions used for the paper.
+RadEval==2.2.1
+pycocoevalcap==1.2
+torch==2.7.1
+transformers==5.20.2
+pandas==3.0.6
+numpy==2.4.6
+pyarrow==26.0.0
+omegaconf
