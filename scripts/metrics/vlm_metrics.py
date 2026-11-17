@@ -1,6 +1,7 @@
 """Ladder metrics for a VLM from its extaudit/vlm_core.py shards on the full test sets (<dataset>_set.parquet: CT-RATE
 v2 3,005 rows -> 3,002 after the non-chest drop, Merlin 5,109; scripts/metrics/vlm_scores.py), with the same metric
-code for every VLM (evaluate_stageB.metrics). Wrong patient = the next scan's answers.
+code for every VLM (evaluate_stageB.metrics). Wrong patient = another patient's answers (finding_reports.partner: the
+scan half the list away in patient order; on CT-RATE the neighbouring scan is often the same patient).
 
     python scripts/metrics/vlm_metrics.py --env configs/env/local.yaml --name M3D-LaMed --datasets ctrate,merlin
 Writes {work_root}/evalB/{name}/{dataset}_ladder.csv and summary.json (merged with the datasets already in it).
@@ -21,6 +22,7 @@ from organic.ctrate_v2 import no_chest_volumes
 from organic.vocab import FINDING_NAMES
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vlm_scores  # noqa: E402
+from finding_reports import partner, patient  # noqa: E402
 
 
 def main():
@@ -47,7 +49,8 @@ def main():
             keep = ~np.isin(cat['index'], bad); cat = {k: v[keep] for k, v in cat.items()}
         n = len(cat['index'])
         res = {k[3:].split('@')[0]: torch.tensor(v) for k, v in cat.items() if k.startswith(key)}
-        res['wrong'] = res['clean'][np.roll(np.arange(n), 1)]
+        vols = st.set_index('index').loc[cat['index'], 'volume'].to_numpy()
+        res['wrong'] = res['clean'][partner(np.array([patient(v, d) for v in vols]))]
         res.update({'nvox_' + k[6:].split('@')[0]: torch.tensor(v) for k, v in cat.items() if k.startswith('nvox__')})
         res['feat'] = torch.tensor(cat['feat']); res['index'] = torch.tensor(cat['index'])
         res['gen_index'] = []; res['texts'] = {'clean': [], 'wrong': []}
