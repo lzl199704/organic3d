@@ -18,7 +18,7 @@ WHAT. Edits that remove exactly what a finding's radiological definition names, 
 Calcium edits are skipped on contrast-enhanced scans (median aorta > 120 HU). Output: score change of every finding
 under every edit; the edit x finding matrix should be diagonal.
 
-    torchrun --nproc_per_node 4 -m organic.evaluate_chest --env configs/env/local.yaml \
+    torchrun --nproc_per_node 4 -m organic.encoder.evaluate_chest --env configs/env/local.yaml \
         --ckpt <work_root>/runs/enc4_organic3d/last.pt [--name enc4_organic3d] [--limit 0] [--parts lobes,edits]
 Writes {work_root}/eval/<name>/ctrate_lobes.npz, ctrate_edits.npz and ctrate_chest_summary.json.
 """
@@ -32,13 +32,13 @@ import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 
-from .augment import erase, normalise
-from .config import load_config, read_manifest
-from .data import SIZE, SPACING, CTDataset, _LUT, _crop_bounds, _crop_pad, crop_center
-from .vocab import BACKGROUND, CTRATE_FINDINGS, FINDING_NAMES, ORGAN_ID
-from .evaluate_stageA import Scorer, _NEG
-from .ctrate_v2 import no_chest_volumes
-from .train_stageA import auroc, setup_dist
+from ..data.interventions import erase, normalise
+from ..config import load_config, read_manifest
+from ..data.dataset import SIZE, SPACING, CTDataset, _LUT, _crop_bounds, _crop_pad, crop_center
+from ..vocab import BACKGROUND, CTRATE_FINDINGS, FINDING_NAMES, ORGAN_ID
+from .evaluate import Scorer, _NEG
+from ..data.ctrate_v2 import no_chest_volumes
+from ..utils import auroc, setup_dist
 
 HERE = os.path.dirname(__file__)
 LOBES = ['right upper lobe', 'right middle lobe', 'right lower lobe', 'left upper lobe', 'left lower lobe']
@@ -161,7 +161,7 @@ def gather(recs, world):
 
 
 def run_lobes(cfg, scorer, ds, rank, world, device):
-    from .data import split_sentences
+    from ..data.dataset import split_sentences
     gen = torch.Generator(device=device).manual_seed(rank)
     recs = []
     for i in range(rank, len(ds), world):
@@ -285,7 +285,7 @@ def metrics_edits(recs):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--config', default=os.path.join(HERE, '../configs/stageA.yaml'))
+    ap.add_argument('--config', default=os.path.join(HERE, '../../configs/stageA.yaml'))
     ap.add_argument('--env', required=True)
     ap.add_argument('--ckpt', required=True, help="checkpoint path, or 'colipri'")
     ap.add_argument('--name', default=None)

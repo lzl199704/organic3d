@@ -15,7 +15,7 @@ import re
 
 import torch
 
-from .vocab import FINDINGS, ORGAN_ID
+from ..vocab import FINDINGS, ORGAN_ID
 
 _CANON = {}
 for _f, (_col, _orgs, _p) in FINDINGS.items():

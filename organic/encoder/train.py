@@ -1,6 +1,6 @@
 """Stage-A training (encoder, core 1). Launch with torchrun; works single-node (local GPUs) or multi-node.
 
-    torchrun --nproc_per_node 4 -m organic.train_stageA --env configs/env/local.yaml \
+    torchrun --nproc_per_node 4 -m organic.encoder.train --env configs/env/local.yaml \
         --ablation configs/encoder/enc4_organic3d.yaml train.max_steps=100
 """
 import argparse
@@ -13,79 +13,18 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
-from torch.distributed.nn.functional import all_gather as all_gather_grad
 from torch.utils.data import DataLoader
 
-from .augment import one_side_only, plan_counterfactuals, build_image_batch, lateral_swap, severity_swap
-from .config import load_config
-from .data import CTDataset, MixedBatchSampler, collate, load_manifests, load_sentences, val_indices
+from ..data.interventions import one_side_only, plan_counterfactuals, build_image_batch, lateral_swap, severity_swap
+from ..config import load_config
+from ..utils import allreduce_grads, auroc, gather_padded, offset, setup_dist  # noqa: F401
+from ..data.dataset import CTDataset, MixedBatchSampler, collate, load_manifests, load_sentences, val_indices
 from .losses import (i2t_loss, t2i_loss, txt_loss, cls_loss, evidence_loss, pair_loss, mirror_loss, anatomy_loss)
 from .model import build_model
-from .vocab import FAMILY, FINDING_NAMES, FINDING_ID, ORGAN_ID, ORGAN_NAMES, canonical_prompts, control_organ_ids, finding_organ_ids
-from .augment import present_organs
+from ..vocab import FAMILY, FINDING_NAMES, FINDING_ID, ORGAN_ID, ORGAN_NAMES, canonical_prompts, control_organ_ids, finding_organ_ids
+from ..data.interventions import present_organs
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-
-# ------------------------------------------------------------------ distributed helpers
-def setup_dist(timeout_min=30):
-    """Evaluation scripts pass a long timeout: rank 0 alone fits the probes for one dataset (20+ min on an 8-core job)
-    while the other ranks wait at the next gather, and NCCL's 10-minute default then aborts the job."""
-    if 'RANK' in os.environ:
-        import datetime
-        dist.init_process_group('nccl', timeout=datetime.timedelta(minutes=timeout_min))
-        rank, world, local = dist.get_rank(), dist.get_world_size(), int(os.environ['LOCAL_RANK'])
-    else:
-        rank, world, local = 0, 1, 0
-    torch.cuda.set_device(local)
-    return rank, world, torch.device('cuda', local)
-
-
-def gather_padded(x, grad=True):
-    """Concatenate variable-length first dimensions across ranks. Returns (all, counts)."""
-    if not dist.is_initialized():
-        return x, [len(x)]
-    n = torch.tensor([len(x)], device=x.device)
-    ns = [torch.zeros_like(n) for _ in range(dist.get_world_size())]
-    dist.all_gather(ns, n)
-    ns = [int(v) for v in ns]
-    m = max(ns)
-    pad = torch.zeros((m - len(x),) + tuple(x.shape[1:]), device=x.device, dtype=x.dtype)
-    xp = torch.cat([x, pad])
-    parts = all_gather_grad(xp) if grad else _gather_nograd(xp)
-    return torch.cat([p[:k] for p, k in zip(parts, ns)]), ns
-
-
-def _gather_nograd(x):
-    out = [torch.zeros_like(x) for _ in range(dist.get_world_size())]
-    dist.all_gather(out, x)
-    return out
-
-
-def offset(counts, rank):
-    return sum(counts[:rank])
-
-
-def allreduce_grads(params, world, bucket_mb=256):
-    """Average gradients across ranks in fixed-order buckets; missing grads count as zeros on every rank."""
-    if world == 1:
-        return
-    for p in params:
-        if p.grad is None:
-            p.grad = torch.zeros_like(p)
-    bucket, size = [], 0
-    limit = bucket_mb * 2 ** 20 // 4
-    for p in params + [None]:
-        if p is not None:
-            bucket.append(p); size += p.numel()
-        if bucket and (p is None or size >= limit):
-            flat = torch.cat([q.grad.reshape(-1).float() for q in bucket])
-            dist.all_reduce(flat)
-            flat /= world
-            o = 0
-            for q in bucket:
-                n = q.numel(); q.grad.copy_(flat[o:o + n].view_as(q.grad)); o += n
-            bucket, size = [], 0
 
 
 # ------------------------------------------------------------------ text batch
@@ -155,24 +94,10 @@ def encode_strings(model, tok, strings, device, max_len):
     return {s: i for i, s in enumerate(uniq)}, emb
 
 
-# ------------------------------------------------------------------ AUROC without sklearn
-def auroc(y, s):
-    ok = ~(np.isnan(y) | np.isnan(s))
-    y, s = y[ok], s[ok]
-    n1 = y.sum(); n0 = len(y) - n1
-    if n1 < 1 or n0 < 1:
-        return float('nan')
-    r = np.empty(len(s)); r[np.argsort(s, kind='mergesort')] = np.arange(1, len(s) + 1)
-    # average ranks for ties
-    _, inv, cnt = np.unique(s, return_inverse=True, return_counts=True)
-    sums = np.bincount(inv, weights=r); r = (sums / cnt)[inv]
-    return float((r[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0))
-
-
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--config', default=os.path.join(HERE, '../configs/stageA.yaml'))
+    ap.add_argument('--config', default=os.path.join(HERE, '../../configs/stageA.yaml'))
     ap.add_argument('--env', required=True)
     ap.add_argument('--ablation', default=None)
     ap.add_argument('overrides', nargs='*')

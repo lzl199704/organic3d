@@ -9,7 +9,7 @@
 import torch
 import torch.nn.functional as F
 
-from .vocab import FINDING_NAMES
+from ..vocab import FINDING_NAMES
 
 
 def i2t_loss(S, pos, true_mask, unknown=None):

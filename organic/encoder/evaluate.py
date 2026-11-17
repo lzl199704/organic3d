@@ -4,7 +4,7 @@ Conditions per volume: clean, each organ group erased (fat fill by default), lef
 Metrics per finding: zero-shot AUROC of Delta_f; organ-removal effect (target minus mean control dAUROC, the
 audit's C3); probe AUROC on mean-pooled tokens (Dec) and its organ-removal effect (Evi); mirror dAUROC.
 
-    torchrun --nproc_per_node 4 -m organic.evaluate_stageA --env configs/env/local.yaml \
+    torchrun --nproc_per_node 4 -m organic.encoder.evaluate --env configs/env/local.yaml \
         --ckpt <work_root>/runs/enc4_organic3d/last.pt --datasets merlin --limit 1000
     # released COLIPRI with its own heads (A0):   --ckpt colipri
 """
@@ -19,13 +19,13 @@ import torch
 import torch.distributed as dist
 from torch.utils.data import DataLoader, Subset
 
-from .augment import erase, lateral_swap, normalise, one_side_only, organ_mask
-from .config import load_config, read_manifest
-from .ctrate_v2 import no_chest_volumes
-from .data import CTDataset, collate, split_sentences
-from .train_stageA import auroc, gather_padded, setup_dist
-from .ladder import matched_pair_auroc
-from .vocab import FINDING_NAMES, FINDINGS, ORGAN_ID, CTRATE_FINDINGS, MERLIN_FINDINGS, SIZE_FINDINGS, canonical_prompts, finding_organ_ids, control_organ_ids
+from ..data.interventions import erase, lateral_swap, normalise, one_side_only, organ_mask
+from ..config import load_config, read_manifest
+from ..data.ctrate_v2 import no_chest_volumes
+from ..data.dataset import CTDataset, collate, split_sentences
+from ..utils import auroc, gather_padded, setup_dist
+from ..metrics import matched_pair_auroc
+from ..vocab import FINDING_NAMES, FINDINGS, ORGAN_ID, CTRATE_FINDINGS, MERLIN_FINDINGS, SIZE_FINDINGS, canonical_prompts, finding_organ_ids, control_organ_ids
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EVAL_ORGANS = {   # organ groups erased at evaluation (each is one condition)
@@ -236,7 +236,7 @@ def run(cfg, scorer, dataset, limit, fills, rank, world, device, bs):
 
 
 def drop_no_chest(res, lab, conds, work_root):
-    """CT-RATE v2 test set: drop the brain series (organic/ctrate_v2.py), as scripts/metrics/extaudit_metrics.py does, so
+    """CT-RATE v2 test set: drop the brain series (organic/data/ctrate_v2.py), as scripts/metrics/extaudit_metrics.py does, so
     the training evaluator and the harness score the same 3,002 volumes. Scan indices are kept."""
     keep = ~np.isin(res['volume'], list(no_chest_volumes(work_root)))
     if keep.all():
@@ -339,7 +339,7 @@ def metrics(res, lab, dataset, fills, min_pos=10):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--config', default=os.path.join(HERE, '../configs/stageA.yaml'))
+    ap.add_argument('--config', default=os.path.join(HERE, '../../configs/stageA.yaml'))
     ap.add_argument('--env', required=True)
     ap.add_argument('--ckpt', required=True, help="checkpoint path, or 'colipri' for the released model")
     ap.add_argument('--name', default=None)

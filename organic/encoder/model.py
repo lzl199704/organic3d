@@ -6,7 +6,7 @@
     S(V, s) = cos(g(v(V,s)), h(t_s)) / tau,   v(V,s) = sum_k beta_k(s) T_k   (sentence-conditioned pooling)
 
 `pool='mean'` replaces v(V,s) by the mean of T (ablation), `queries='global'` uses only unassigned queries.
-`pool='fixed'` (ablation, 2026-10-16): beta may only use the slots of the organs the sentence names (organic/routing.py);
+`pool='fixed'` (ablation, 2026-10-16): beta may only use the slots of the organs the sentence names (organic/encoder/routing.py);
 the route travels as K extra columns appended to the text embedding by attach_route().
 """
 import math
@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
-from .vocab import ORGAN_NAMES
+from ..vocab import ORGAN_NAMES
 
 GRID = 24
 
@@ -94,7 +94,7 @@ class Organic3D(nn.Module):
         self.g = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d))
         self.h = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d))
         self.logit_scale = nn.Parameter(torch.tensor(math.log(1 / m.init_temperature)))
-        from .vocab import FINDING_NAMES
+        from ..vocab import FINDING_NAMES
         self.ev_bias = nn.Parameter(torch.zeros(len(FINDING_NAMES)))    # b_f: prior target after erasure
         self.cls_bias = nn.Parameter(torch.zeros(len(FINDING_NAMES)))   # c_f: offset for label-prompt BCE
         self.register_buffer('pos', grid_positions('cpu'), persistent=False)
