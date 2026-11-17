@@ -8,7 +8,7 @@ Per finding: answer AUROC; Dec_LLM-in (5-fold probe on projector output); Use = 
 effect (target minus control dAUROC of P(Yes)); mirror dAUROC; matched-pair AUROC and its gap; wrong-patient AUROC.
 Summary: Ret = clinical F1(report | wrong patient) / clinical F1(report | own scan).
 
-    torchrun --nproc_per_node 4 -m organic.evaluate_stageB --env configs/env/local.yaml \
+    torchrun --nproc_per_node 4 -m organic.vlm.evaluate --env configs/env/local.yaml \
         --run <work_root>/runsB/vlm4_organic3d --datasets merlin,ctrate --limit 1000 --gen 200
 """
 import argparse
@@ -21,15 +21,15 @@ import torch
 import torch.distributed as dist
 from torch.utils.data import DataLoader, Subset
 
-from .augment import erase, normalise, organ_mask
-from .config import load_config, read_manifest
-from .data import CTDataset, collate
-from .evaluate_stageA import EVAL_ORGANS, cond_name, organ_ids, probe_scores
-from .ladder import clinical_f1, ctrate_report_labels, matched_pair_auroc, merlin_report_labels
-from .train_stageA import auroc, gather_padded, setup_dist
-from .train_stageB import finding_list, question, report_prompt
-from .vlm import Organic3DVLM, build_encoder
-from .vocab import CTRATE_FINDINGS, FINDINGS, FINDING_NAMES, MERLIN_FINDINGS, SIZE_FINDINGS, control_organ_ids, finding_organ_ids
+from ..data.interventions import erase, normalise, organ_mask
+from ..config import load_config, read_manifest
+from ..data.dataset import CTDataset, collate
+from ..encoder.evaluate import EVAL_ORGANS, cond_name, organ_ids, probe_scores
+from ..metrics import clinical_f1, ctrate_report_labels, matched_pair_auroc, merlin_report_labels
+from ..utils import auroc, gather_padded, setup_dist
+from .train import finding_list, question, report_prompt
+from .model import Organic3DVLM, build_encoder
+from ..vocab import CTRATE_FINDINGS, FINDINGS, FINDING_NAMES, MERLIN_FINDINGS, SIZE_FINDINGS, control_organ_ids, finding_organ_ids
 
 FAM = {'ctrate': CTRATE_FINDINGS, 'merlin': MERLIN_FINDINGS}
 
@@ -90,7 +90,7 @@ def main():
                                 **{k: (v.half() if k == 'feat' else v).numpy() for k, v in res.items() if torch.is_tensor(v)})
             if a.also_n and a.limit and a.also_n < len(m):
                 # the external-model audits score the first also_n scans of this same fixed-seed sample
-                # (audit_nvreason.audit_sample draws with the same seed, so its 1,000 = our first 1,000 of 1,500)
+                # (organic.baselines.nv_reason_ct.audit_sample draws with the same seed, so its 1,000 = our first 1,000 of 1,500)
                 tab_s, summ_s = metrics(subset_res(res, res['index'].numpy() < a.also_n), ds.labels_all, dset)
                 tab_s.to_csv(os.path.join(out_dir, f'{dset}_ladder_n{a.also_n}.csv'))
                 summary_sub[dset] = summ_s

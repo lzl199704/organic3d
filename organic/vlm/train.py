@@ -13,9 +13,9 @@ Terms (weights in cfg.lossB; 0 disables):
 Reports (vlm.report_mode): 'free' = the findings text alone (rounds 1-10); 'list' = answer-then-write, the target is
 "Abnormal findings: <phrases of the labelled positives, or none>.\nReport: <findings text>", so the report is written
 conditioned on an explicit finding list. At inference the list is either generated or prefilled from the model's own
-yes/no answers (evaluate_stageB --gen, extaudit/vlm_models/organic3d_vlm.py); only the text after 'Report:' is scored.
+yes/no answers (organic.vlm.evaluate --gen, extaudit/vlm_models/organic3d_vlm.py); only the text after 'Report:' is scored.
 
-    torchrun --nproc_per_node 4 -m organic.train_stageB --env configs/env/local.yaml --ablation configs/vlm/vlm4_organic3d.yaml
+    torchrun --nproc_per_node 4 -m organic.vlm.train --env configs/env/local.yaml --ablation configs/vlm/vlm4_organic3d.yaml
 """
 import argparse
 import json
@@ -29,12 +29,12 @@ import torch.distributed as dist
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from .augment import erase, normalise, organ_mask, present_organs
-from .config import load_config
-from .data import CTDataset, MixedBatchSampler, collate, load_manifests, val_indices
-from .train_stageA import allreduce_grads, auroc, gather_padded, setup_dist
-from .vlm import Organic3DVLM, build_encoder, sync_encoder_cfg
-from .vocab import (FAMILY, FINDINGS, FINDING_NAMES, REGION, SIZE_FINDINGS, canonical_prompts, control_organ_ids,
+from ..data.interventions import erase, normalise, organ_mask, present_organs
+from ..config import load_config
+from ..data.dataset import CTDataset, MixedBatchSampler, collate, load_manifests, val_indices
+from ..utils import allreduce_grads, auroc, gather_padded, setup_dist
+from .model import Organic3DVLM, build_encoder, sync_encoder_cfg
+from ..vocab import (FAMILY, FINDINGS, FINDING_NAMES, REGION, SIZE_FINDINGS, canonical_prompts, control_organ_ids,
                     finding_organ_ids)
 
 
@@ -136,12 +136,12 @@ def pick_finding(lab, rng):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--config', default=os.path.join(HERE, '../configs/stageB.yaml'))
+    ap.add_argument('--config', default=os.path.join(HERE, '../../configs/stageB.yaml'))
     ap.add_argument('--env', required=True)
     ap.add_argument('--ablation', default=None)
     ap.add_argument('overrides', nargs='*')
     a = ap.parse_args()
-    base = load_config(os.path.join(HERE, '../configs/stageA.yaml'))
+    base = load_config(os.path.join(HERE, '../../configs/stageA.yaml'))
     cfg = load_config(a.config, env=a.env, ablation=a.ablation, overrides=a.overrides)
     from omegaconf import OmegaConf
     cfg = OmegaConf.merge(base, cfg)

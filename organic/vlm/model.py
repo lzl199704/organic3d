@@ -230,7 +230,7 @@ def sync_encoder_cfg(cfg):
 
 def build_encoder(cfg, device):
     """Stage-A encoder: Organic3D from a checkpoint (cfg.vlm.encoder_ckpt) or released COLIPRI + fresh query head."""
-    from .model import build_model
+    from ..encoder.model import build_model
     enc = build_model(cfg)
     ck = cfg.vlm.get('encoder_ckpt')
     if ck and ck != 'colipri':
