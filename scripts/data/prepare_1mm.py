@@ -105,10 +105,10 @@ def run_ts(dst_root, device, fast, img_sub='1mm/img', seg_sub='1mm/ts_seg'):
 
 
 def hu_check(dst_root, n=20, seed=0, img_sub='1mm/img', seg_sub='1mm/ts_seg'):
-    """Median HU inside TotalSegmentator structures for a random sample (organic.volio.hu_checks rules)."""
+    """Median HU inside TotalSegmentator structures for a random sample (organic.data.volio.hu_checks rules)."""
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-    from organic.volio import hu_checks
+    from organic.data.volio import hu_checks
     segs = sorted(glob.glob(os.path.join(dst_root, seg_sub, '**', '*.nii.gz'), recursive=True))
     rng = np.random.default_rng(seed)
     for s in rng.choice(segs, size=min(n, len(segs)), replace=False) if segs else []:

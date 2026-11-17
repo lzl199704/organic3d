@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from omegaconf import OmegaConf
 from organic.vocab import FINDINGS, ORGAN_NAMES, MERLIN_FINDINGS
-from organic.data import split_sentences
+from organic.data.dataset import split_sentences
 
 LLM = 'Qwen/Qwen3-14B'
 SPLITS = ['train', 'val']
@@ -312,7 +312,7 @@ def ok_swap(t, e):
 def clean_claims(claims):
     """Post-hoc checks on LLM claims (after proof-reading 150 claims): Merlin finding/polarity follow the rule layer;
     CT-RATE keyword fallback for missed findings; rewrites that are not contradictions are dropped."""
-    import organic.label_rules as lr
+    import organic.data.label_rules as lr
     c = claims.copy()
     c['polarity_llm'] = c.polarity
     c = c.sort_values(['volume', 'idx']).reset_index(drop=True)
@@ -368,9 +368,9 @@ def clean_claims(claims):
 
 
 def merlin_labels(claims):
-    """Hybrid patient labels for Merlin: LLM claims (gated, organ-checked) + rule layer (label_rules.py).
+    """Hybrid patient labels for Merlin: LLM claims (gated, organ-checked) + rule layer (organic/data/label_rules.py).
     1 if any present claim; NaN if only uncertain; otherwise 0 (closed world, matching the closed-world test reference labels)."""
-    import organic.label_rules as lr
+    import organic.data.label_rules as lr
     out = {}
     for vol, g in claims.groupby('volume', sort=False):
         g = g.sort_values('idx')

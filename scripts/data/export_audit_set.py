@@ -1,4 +1,4 @@
-"""Export a test set for the benchmark harness (extaudit/): one row per test volume, in evaluate_stageA's order,
+"""Export a test set for the benchmark harness (extaudit/): one row per test volume, in organic.encoder.evaluate's order,
 so `index` joins our models' *_scores.npz. Also writes the shared metadata (finding names, prompt phrases, erased organ
 groups as TotalSegmentator ids) that the model adapters read, so they need no organic import.
 
@@ -21,7 +21,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import abspath, load_config, read_manifest
-from organic.evaluate_stageA import EVAL_ORGANS, cond_name, lateral_sentences
+from organic.encoder.evaluate import EVAL_ORGANS, cond_name, lateral_sentences
 from organic.vocab import FINDING_NAMES, FINDINGS, MERLIN_FINDINGS, ORGANS
 
 
@@ -55,7 +55,7 @@ def main():
         else:
             m = read_manifest(cfg, d)
             m = m[m.split == 'test']
-        if d == 'merlin':                                   # same filter as evaluate_stageA.run
+        if d == 'merlin':                                   # same filter as organic.encoder.evaluate.run
             m = m[m[[f'label_{f}' for f in MERLIN_FINDINGS]].notna().any(axis=1)]
         m = m.reset_index(drop=True)
         t = m[['volume', 'patient_id'] + [f'label_{f}' for f in FINDING_NAMES]].copy()

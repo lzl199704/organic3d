@@ -20,8 +20,8 @@ import torch.nn.functional as F
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 import nibabel as nib
 from organic.config import load_config, abspath, read_manifest
-from organic.volio import read_image, read_mask, image_space, sample_raw_on_mask_grid, hu_checks
-from organic.data import SIZE, SPACING, CENTER_ORGANS, _LUT, _crop_bounds, _crop_pad, crop_center
+from organic.data.volio import read_image, read_mask, image_space, sample_raw_on_mask_grid, hu_checks
+from organic.data.dataset import SIZE, SPACING, CENTER_ORGANS, _LUT, _crop_bounds, _crop_pad, crop_center
 from organic.vocab import ORGAN_ID, BACKGROUND
 
 MARGIN = 8   # voxels at 2 mm = 16 mm jitter each way

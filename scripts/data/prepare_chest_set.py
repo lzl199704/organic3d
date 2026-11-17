@@ -1,6 +1,6 @@
 """Scan list for the harness chest rung (extaudit/chest.py, --task chest; 2026-10-24): the CT-RATE v2 test scans of
 extaudit/ctrate_set.parquet (img, seg, labels) plus, per scan, the lobe sentences of its report chosen exactly as
-organic/evaluate_chest.py does (lobe_sentences on the manifest report with split_sentences): present statements that
+organic/encoder/evaluate_chest.py does (lobe_sentences on the manifest report with split_sentences): present statements that
 name one lung lobe once, with its side, as a template with a {LOBE} slot, the true lobe index (LOBES order) and the
 finding word. No image data is written; the harness reads the same img / seg files as the ladder.
 
@@ -16,9 +16,9 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 from organic.config import load_config, read_manifest          # noqa: E402
-from organic.ctrate_v2 import no_chest_volumes                  # noqa: E402
-from organic.data import split_sentences                        # noqa: E402
-from organic.evaluate_chest import lobe_sentences               # noqa: E402
+from organic.data.ctrate_v2 import no_chest_volumes                  # noqa: E402
+from organic.data.dataset import split_sentences                        # noqa: E402
+from organic.encoder.evaluate_chest import lobe_sentences               # noqa: E402
 
 
 def main():
