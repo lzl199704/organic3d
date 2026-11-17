@@ -4,7 +4,7 @@ Label sets for the Merlin test scans:
   ref       the reference labels the harness scores against (manifests/merlin.parquet test rows; 'Uncertain'
             dropped). The paper's reference labels are NOT distributed: supply your own (scripts/data/prepare_manifests.py
             --merlin_test_labels).
-  v4        our report labeller (organic/label_rules.py = frozen v4) on the test reports, --v4_labels (parquet, index =
+  v4        our report labeller (organic/data/label_rules.py = frozen v4) on the test reports, --v4_labels (parquet, index =
             volume, columns label_mr_*; default {work_root}/manifests/merlin_test_labels_v4.parquet)
   file_drop Merlin's released zero_shot_findings_disease_cls.csv (--merlin_file; part of the Merlin data release) with -1 rows dropped (the protocol of the Merlin and
             RADAR zero-shot numbers; -1 hides most positives the file's rules miss)

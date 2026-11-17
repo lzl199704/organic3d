@@ -1,6 +1,6 @@
 """Ladder metrics for a VLM from its extaudit/vlm_core.py shards on the full test sets (<dataset>_set.parquet: CT-RATE
 v2 3,005 rows -> 3,002 after the non-chest drop, Merlin 5,109; scripts/metrics/vlm_scores.py), with the same metric
-code for every VLM (evaluate_stageB.metrics). Wrong patient = another patient's answers (finding_reports.partner: the
+code for every VLM (organic.vlm.evaluate.metrics). Wrong patient = another patient's answers (finding_reports.partner: the
 scan half the list away in patient order; on CT-RATE the neighbouring scan is often the same patient).
 
     python scripts/metrics/vlm_metrics.py --env configs/env/local.yaml --name M3D-LaMed --datasets ctrate,merlin
@@ -17,8 +17,8 @@ import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
-from organic.evaluate_stageB import metrics
-from organic.ctrate_v2 import no_chest_volumes
+from organic.vlm.evaluate import metrics
+from organic.data.ctrate_v2 import no_chest_volumes
 from organic.vocab import FINDING_NAMES
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vlm_scores  # noqa: E402
@@ -44,7 +44,7 @@ def main():
         finds = list(cat.pop('findings'))
         key = 'D__' if any(k.startswith('D__') for k in cat) else 'P__'      # logit difference when saved (no ties)
         st = pd.read_parquet(os.path.join(root, f'{d}_set.parquet'))
-        if d == 'ctrate':                       # CT-RATE v2: the brain series are not scored (organic/ctrate_v2.py)
+        if d == 'ctrate':                       # CT-RATE v2: the brain series are not scored (organic/data/ctrate_v2.py)
             bad = st['index'][st.volume.isin(no_chest_volumes(cfg.paths.work_root))].to_numpy()
             keep = ~np.isin(cat['index'], bad); cat = {k: v[keep] for k, v in cat.items()}
         n = len(cat['index'])

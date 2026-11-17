@@ -1,6 +1,6 @@
 """Paired patient-level bootstrap of the macro zero-shot AUROC difference, ours vs baselines, on one finding set.
 
-Reads {work_root}/eval/{name}/{dataset}_scores.npz (per-scan scores written by extaudit_metrics / evaluate_stageA) and
+Reads {work_root}/eval/{name}/{dataset}_scores.npz (per-scan scores written by extaudit_metrics / organic.encoder.evaluate) and
 {name}/{dataset}_ladder.csv (finding order). Per finding, scans where either model has no score (NaN, e.g. RADAR's
 segmenter did not find the organ) or no label are dropped, so both models are scored on the same scans.
   python scripts/metrics/paired_zs_bootstrap.py --env configs/env/local.yaml --ours enc4_organic3d \

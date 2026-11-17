@@ -3,10 +3,10 @@
 Table 2, finding classification: each finding asked as a yes/no question on the clean scan.
   AUROC                 threshold-free, from the answer score (P(Yes) or logit(Yes) - logit(No))
   Acc / BACC / F1       of the answer the model actually gives: Yes when P(Yes) >= 0.5 (logit difference >= 0)
-  Macro over findings with >= 10 positives and >= 10 negatives (the ladder rule, evaluate_stageB.metrics).
+  Macro over findings with >= 10 positives and >= 10 negatives (the ladder rule, organic.vlm.evaluate.metrics).
 Table 3, finding-based reports: the report states every finding whose score clears its cross-fitted F1-max threshold
   (scripts/metrics/finding_reports.py: 5 patient folds, threshold fit on the other four).
-  Acc / BACC / precision / recall / F1, macro over findings with >= 1 positive (organic.ladder.clinical_f1 rule);
+  Acc / BACC / precision / recall / F1, macro over findings with >= 1 positive (organic.metrics.clinical_f1 rule);
   F1_wrong = the report of another patient scored against this one; attributable F1 (IA-F1) = F1 - F1_wrong.
 Patient-level bootstrap 95% CIs; paired bootstrap of the reference model (--ref) minus each model on the same scans.
 Free-text report metrics are computed separately (scripts/metrics/report_metrics_std.py).
@@ -27,7 +27,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.vocab import FINDING_NAMES
-from organic.ctrate_v2 import no_chest_volumes
+from organic.data.ctrate_v2 import no_chest_volumes
 from finding_reports import VLMS, W, crossfit, from_harness, partner, patient
 
 
@@ -99,7 +99,7 @@ def main():
     t1, t2, pr = [], [], []
     for d in ('ctrate', 'merlin'):
         st = pd.read_parquet(f'{W}/extaudit/{d}_set.parquet').sort_values('index')
-        if d == 'ctrate':                       # CT-RATE v2: the brain series are not scored (organic/ctrate_v2.py)
+        if d == 'ctrate':                       # CT-RATE v2: the brain series are not scored (organic/data/ctrate_v2.py)
             st = st[~st.volume.isin(no_chest_volumes(W))]
         vols = st.volume.to_numpy()
         pats = np.array([patient(v, d) for v in vols])

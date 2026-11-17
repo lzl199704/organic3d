@@ -9,7 +9,7 @@ Merlin 5,109):
                 keeps its F1 here)
   attributable  f1 - f1_wrong (IA-F1): the part of the report's correctness that comes from this scan
   retraction    of findings correctly stated on the clean scan, the share withdrawn after erasing the finding's own
-                organ minus the share withdrawn after erasing a control organ (evaluate_stageB target / control rule;
+                organ minus the share withdrawn after erasing a control organ (organic.vlm.evaluate target / control rule;
                 scans where the organ was not found are skipped); non-size findings only (= OEH answer test)
 Patient-level bootstrap 95% CIs (thresholds held fixed).
 
@@ -28,9 +28,9 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from organic.ctrate_v2 import no_chest_volumes
-from organic.evaluate_stageA import organ_ids
-from organic.ladder import clinical_f1
+from organic.data.ctrate_v2 import no_chest_volumes
+from organic.encoder.evaluate import organ_ids
+from organic.metrics import clinical_f1
 from organic.vocab import FINDING_NAMES, SIZE_FINDINGS, control_organ_ids, finding_organ_ids
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -108,7 +108,7 @@ def scores(pred, Y, cols, erased, w):
 
 def evaluate(src, d, boot, rng):
     P, nv, finds, L, vol = src
-    if d == 'ctrate':                           # CT-RATE v2: the brain series are not scored (organic/ctrate_v2.py)
+    if d == 'ctrate':                           # CT-RATE v2: the brain series are not scored (organic/data/ctrate_v2.py)
         k = ~np.isin(vol, list(no_chest_volumes(W)))
         P, nv = {c: v[k] for c, v in P.items()}, {c: v[k] for c, v in nv.items()}
         L, vol = L[k], vol[k]

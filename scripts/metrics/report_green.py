@@ -31,7 +31,7 @@ OUT = f'{W}/eval/green'
 def pairs(name, d):
     st = pd.read_parquet(f'{W}/extaudit/{d}_set.parquet')
     if d == 'ctrate':
-        from organic.ctrate_v2 import no_chest_volumes
+        from organic.data.ctrate_v2 import no_chest_volumes
         st = st[~st.volume.isin(no_chest_volumes(W))]
     rep = load(name, d)
     if not st['index'].isin(rep).all():

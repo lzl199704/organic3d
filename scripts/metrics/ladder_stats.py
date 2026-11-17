@@ -1,6 +1,6 @@
 """Patient-level bootstrap CIs for the stage-A ladder, and paired comparisons between runs (ladder v2).
 
-Reads {work_root}/eval/<run>/<dataset>_scores.npz written by evaluate_stageA (per-volume scores of every condition).
+Reads {work_root}/eval/<run>/<dataset>_scores.npz written by organic.encoder.evaluate (per-volume scores of every condition).
 
     python scripts/metrics/ladder_stats.py --env configs/env/local.yaml --runs enc3_routing,enc4_organic3d --datasets merlin,ctrate
     python scripts/metrics/ladder_stats.py ... --compare enc4_organic3d:enc3_routing      # paired differences + BH over findings
@@ -19,8 +19,8 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
-from organic.evaluate_stageA import EVAL_ORGANS, cond_name, organ_ids
-from organic.train_stageA import auroc
+from organic.encoder.evaluate import EVAL_ORGANS, cond_name, organ_ids
+from organic.utils import auroc
 from organic.vocab import CTRATE_FINDINGS, FINDING_NAMES, MERLIN_FINDINGS, SIZE_FINDINGS, control_organ_ids, finding_organ_ids
 
 FAM = {'merlin': MERLIN_FINDINGS, 'ctrate': CTRATE_FINDINGS}

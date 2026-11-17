@@ -1,10 +1,10 @@
 """Ladder metrics for a released encoder from its extaudit shards (extaudit/core.py), with the same metric and output
-code as our models (evaluate_stageA.metrics / write_outputs), so the tables compare like with like.
+code as our models (organic.encoder.evaluate.metrics / write_outputs), so the tables compare like with like.
 
     python scripts/metrics/extaudit_metrics.py --env configs/env/local.yaml --name CT-CLIP --dataset ctrate
 Reads {work_root}/extaudit/out/{name}/{dataset}_shard*.npz; writes {work_root}/eval/{name}/{dataset}_ladder.csv,
 _scores.npz and _summary.json (no organ-slot swap or block tests: those need our query slots / are ours only).
-CT-RATE is scored on the official v2 test set (organic/ctrate_v2.py; 3,002 volumes) unless --keep_no_chest.
+CT-RATE is scored on the official v2 test set (organic/data/ctrate_v2.py; 3,002 volumes) unless --keep_no_chest.
 """
 import argparse
 import glob
@@ -17,8 +17,8 @@ import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from organic.config import load_config
-from organic.ctrate_v2 import no_chest_volumes
-from organic.evaluate_stageA import write_outputs
+from organic.data.ctrate_v2 import no_chest_volumes
+from organic.encoder.evaluate import write_outputs
 from organic.vocab import FINDING_NAMES
 
 

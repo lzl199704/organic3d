@@ -10,7 +10,7 @@ CT-RATE (v2 test: 3,002 volumes)
             BLEU, Java METEOR 1.5), BERTScore and RadGraph-F1 (RadEval), GREEN with --green (RadEval, 7B judge, slow)
 Merlin (test: 5,109 scans)
   text      vs the reference FINDINGS section: the same text metrics (RadEval protocol of the Merlin report papers)
-  clinical  our frozen rule labeller v4 (organic.ladder.merlin_report_labels) vs the audited QA labels where present:
+  clinical  our frozen rule labeller v4 (organic.metrics.merlin_report_labels) vs the audited QA labels where present:
             macro F1 over findings with >= 1 positive, and CRG (not a published Merlin standard; reported as ours)
 Patient bootstrap 95% CIs for F1 and CRG (--boot); text metrics are corpus-level.
 
@@ -113,7 +113,7 @@ def extract(texts, d):
     if d == 'ctrate':
         import ctrate_report_classifier as ctc
         return (ctc.classify(texts) >= 0.5).astype(float)
-    from organic.ladder import merlin_report_labels
+    from organic.metrics import merlin_report_labels
     return merlin_report_labels(texts)[:, [FINDING_NAMES.index(f) for f in MERLIN_FINDINGS]]
 
 
@@ -149,7 +149,7 @@ def main():
     for d in a.datasets.split(','):
         st = pd.read_parquet(f'{W}/extaudit/{d}_set.parquet')
         if d == 'ctrate':                                       # CT-RATE v2: drop the 3 non-chest series
-            from organic.ctrate_v2 import no_chest_volumes
+            from organic.data.ctrate_v2 import no_chest_volumes
             st = st[~st.volume.isin(no_chest_volumes(W))]
         for name in a.names.split(','):
             rep = load(name, d)

@@ -9,7 +9,7 @@ Labels: finding f is positive on a scan when the radiologists drew a lesion of a
   --mode ladder  shards out_vlm/<name>/rex_heldout_ladder_shard*.npz (vlm_core --dataset ctrate --set_file
                  rex_heldout_set.parquet --out_tag rex_heldout_ladder: clean, mirror and the CT-RATE organ erasures): the
                  above plus MP (matched-pair AUROC: positive/negative pairs identical on the other 9 lesion labels,
-                 organic.ladder.matched_pair_auroc via evaluate_stageB.metrics) and OER (answer test,
+                 organic.metrics.matched_pair_auroc via organic.vlm.evaluate.metrics) and OER (answer test,
                  finding_reports.evaluate retraction: cross-fitted thresholds, non-size findings, target organ vs control
                  organ)  -> W/eval/rex_vlm_ladder.csv
 Point estimates only (the paper reports no intervals).
@@ -26,7 +26,7 @@ import pandas as pd
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-from organic.evaluate_stageB import metrics  # noqa: E402
+from organic.vlm.evaluate import metrics  # noqa: E402
 from organic.vocab import FINDING_NAMES  # noqa: E402
 from lesion_cls_metrics import rex_labels  # noqa: E402
 from main_tables import answer, macro  # noqa: E402
