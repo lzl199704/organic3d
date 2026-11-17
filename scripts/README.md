@@ -1,7 +1,8 @@
 # Scripts
 
 Run every script from the repository root (`python scripts/<folder>/<script>.py`). Locations come from the env file
-(`configs/env/local.yaml`, or `$ORGANIC3D_ENV` / `$ORGANIC3D_WORK_ROOT`, see `organic/workroot.py`).
+(`configs/env/local.yaml`, or `$ORGANIC3D_ENV` / `$ORGANIC3D_WORK_ROOT`, see `organic/workroot.py`). Per-scan scores go to
+`{work_root}/extaudit/out*/<name>/`, metrics to `{work_root}/eval/` and `{work_root}/evalB/<name>/`.
 
 | Folder | What it holds | Start with |
 |---|---|---|
