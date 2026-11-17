@@ -1,4 +1,4 @@
-"""ItemizedCLIP (Lyu et al., 2026; github.com/MLNeurosurg/ItemizedCLIP, MIT), CT-RATE checkpoint from the
+"""ItemizedCLIP (Lyu et al., CVPR 2026; github.com/MLNeurosurg/ItemizedCLIP, MIT), CT-RATE checkpoint from the
 README's Google Drive link (CTRATE_HLIP_BiomedBERT_itemizedclip: HLIP ViT-B singlescan_h2_token2744 + CXR-BERT +
 item-conditioned cross-attention pooling), run in $ORGANIC3D_BASELINES/hlip/venv (shared with hlip.py; repo at hlip/itemizedclip_repo, checkpoint at
 hlip/weights/itemizedclip_ctrate.pt).
