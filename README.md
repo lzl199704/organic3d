@@ -162,7 +162,12 @@ region lowers the finding's score more; each map is scaled to its own maximum. C
 ## Repository layout
 
 ```
-organic/     ORGANIC-3D encoder and VLM: model, losses, training
+organic/
+  data/        dataset, organ masks, interventions (erasure, mirror, text edits), report label rules
+  encoder/     ORGANIC-3D encoder: model, organ routing, losses, training, evaluation
+  vlm/         ORGANIC-3D VLM: model, training, evaluation
+  baselines/   NV-Reason-CT and MedGemma wrappers used by the harness adapters
+  vocab.py, config.py, metrics.py, utils.py   organs and findings, configs, shared metrics, distributed helpers
 extaudit/    evaluation harness and adapters for the released models
 scripts/
   setup/       environment checks and smoke tests
@@ -214,9 +219,9 @@ evaluation results; `enc1`–`enc4` and `vlm1`–`vlm4` follow the rows of Table
 
 ```bash
 # encoder: 4 GPUs, batch 4 per GPU, 12,000 steps
-torchrun --nproc_per_node 4 -m organic.train_stageA --env configs/env/local.yaml --ablation configs/encoder/enc4_organic3d.yaml
+torchrun --nproc_per_node 4 -m organic.encoder.train --env configs/env/local.yaml --ablation configs/encoder/enc4_organic3d.yaml
 # VLM on the frozen encoder ({work_root}/runs/enc4_organic3d/last.pt): 4 GPUs, 10,000 steps
-torchrun --nproc_per_node 4 -m organic.train_stageB --env configs/env/local.yaml --ablation configs/vlm/vlm4_organic3d.yaml
+torchrun --nproc_per_node 4 -m organic.vlm.train --env configs/env/local.yaml --ablation configs/vlm/vlm4_organic3d.yaml
 ```
 
 Any config value can be overridden on the command line (`key=value`, e.g. `train.max_steps=100`). Wrappers:
