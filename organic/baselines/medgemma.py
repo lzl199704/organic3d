@@ -1,7 +1,7 @@
 """Alignment-ladder audit of MedGemma 1.5 4B (google/medgemma-1.5-4b-it): a 2D-slice VLM with 3D CT support.
 
 Same test volumes (audit_sample, fixed seed), conditions and metric code as the NV-Reason-CT audit and our stage-B
-evaluation (evaluate_stageB.metrics): answer AUROC, LLM-input probe, use, organ-erasure effect, mirror, matched pairs,
+evaluation (organic.vlm.evaluate.metrics): answer AUROC, LLM-input probe, use, organ-erasure effect, mirror, matched pairs,
 wrong-patient AUROC. Reports are not generated here (QA rungs only); free-text report generation uses MedGemma.generate
 through extaudit/vlm_models/medgemma.py and extaudit/vlm_report.py.
 
@@ -11,7 +11,7 @@ sampled uniformly through the volume; each slice an RGB image whose channels are
 1 mm HU volume and its TotalSegmentator mask before slicing. Per condition the image prefix is encoded once and its
 cache reused for every question.
 
-    torchrun --nproc_per_node 4 -m organic.audit_medgemma --env configs/env/local.yaml --datasets merlin,ctrate --limit 1000
+    torchrun --nproc_per_node 4 -m organic.baselines.medgemma --env configs/env/local.yaml --datasets merlin,ctrate --limit 1000
 """
 import argparse
 import copy
@@ -22,15 +22,15 @@ import numpy as np
 import torch
 import torch.distributed as dist
 
-from .augment import erase, organ_mask
-from .audit_nvreason import audit_sample
-from .config import abspath, load_config
-from .data import _LUT
-from .evaluate_stageA import EVAL_ORGANS, cond_name, organ_ids
-from .evaluate_stageB import FAM, metrics
-from .train_stageA import gather_padded, setup_dist
-from .volio import read_image, read_mask
-from .vocab import FINDINGS, FINDING_NAMES
+from ..data.interventions import erase, organ_mask
+from .nv_reason_ct import audit_sample
+from ..config import abspath, load_config
+from ..data.dataset import _LUT
+from ..encoder.evaluate import EVAL_ORGANS, cond_name, organ_ids
+from ..vlm.evaluate import FAM, metrics
+from ..utils import gather_padded, setup_dist
+from ..data.volio import read_image, read_mask
+from ..vocab import FINDINGS, FINDING_NAMES
 
 MODEL_ID = 'google/medgemma-1.5-4b-it'
 N_SLICES = 85
@@ -199,7 +199,7 @@ def main():
     ap.add_argument('--fill', default='fat')
     ap.add_argument('--name', default='MedGemma-1.5-4B')
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     os.environ.setdefault('HF_HOME', cfg.paths.hf_home)
     rank, world, device = setup_dist(timeout_min=240)
     mg = MedGemma(device)
@@ -215,7 +215,7 @@ def main():
             tab.to_csv(os.path.join(out_dir, f'{dset}_ladder.csv'))
             summary[dset] = summ
             print('SUMMARY', json.dumps({'run': a.name, 'dataset': dset, **summ}), flush=True)
-            # per-scan scores (as evaluate_stageB) for the finding-based reports and paired bootstrap CIs
+            # per-scan scores (as organic.vlm.evaluate) for the finding-based reports and paired bootstrap CIs
             np.savez_compressed(os.path.join(out_dir, f'{dset}_scores.npz'), labels=L[res['index'].numpy()],
                                 volume=m.volume.to_numpy()[res['index'].numpy()].astype(str),
                                 **{k: (v.half() if k == 'feat' else v).numpy() for k, v in res.items() if torch.is_tensor(v)})

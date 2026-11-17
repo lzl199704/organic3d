@@ -1,13 +1,13 @@
 """Alignment-ladder audit of NV-Reason-CT (released 3D CT VLM, Qwen3.5-4B + Primus/COLIPRI ViT, 13,824 tokens).
 
-Scored with the same metric code as our stage-B model (evaluate_stageB.metrics): answer AUROC, LLM-input probe,
+Scored with the same metric code as our stage-B model (organic.vlm.evaluate.metrics): answer AUROC, LLM-input probe,
 Use, organ-erasure effect, mirror, matched-pair AUROC, wrong-patient AUROC, and report clinical F1 / Ret.
 
 The model's own preprocessing is reproduced (LPS, 2 mm, its anatomy-aware 192^3 crop), applied to the image and the
 TotalSegmentator mask together so organ erasure happens in exactly the geometry the model sees. Per condition the
 13,824-token image prefix is encoded once and its cache reused for every question.
 
-    torchrun --nproc_per_node 4 -m organic.audit_nvreason --env configs/env/local.yaml --datasets merlin,ctrate --limit 500 --gen 100
+    torchrun --nproc_per_node 4 -m organic.baselines.nv_reason_ct --env configs/env/local.yaml --datasets merlin,ctrate --limit 500 --gen 100
 """
 import argparse
 import copy
@@ -20,14 +20,14 @@ import pandas as pd
 import torch
 import torch.distributed as dist
 
-from .augment import erase, organ_mask
-from .config import abspath, load_config, read_manifest
-from .data import _LUT
-from .evaluate_stageA import EVAL_ORGANS, cond_name, organ_ids
-from .evaluate_stageB import FAM, metrics
-from .train_stageA import gather_padded, setup_dist
-from .volio import image_space
-from .vocab import FINDINGS, FINDING_NAMES
+from ..data.interventions import erase, organ_mask
+from ..config import abspath, load_config, read_manifest
+from ..data.dataset import _LUT
+from ..encoder.evaluate import EVAL_ORGANS, cond_name, organ_ids
+from ..vlm.evaluate import FAM, metrics
+from ..utils import gather_padded, setup_dist
+from ..data.volio import image_space
+from ..vocab import FINDINGS, FINDING_NAMES
 
 MODEL_ID = 'nvidia/NV-Reason-CT'
 REGION = {'merlin': 'abdomen', 'ctrate': 'chest'}
@@ -75,7 +75,7 @@ class NVPrep:
         if raw_space:
             import nibabel as nib
             from monai.data import MetaTensor
-            from .volio import sample_raw_on_mask_grid
+            from ..data.volio import sample_raw_on_mask_grid
             snii = nib.load(seg_path); sarr = np.asarray(snii.dataobj).astype(np.float32)
             img = sample_raw_on_mask_grid(img_path, snii.affine, sarr.shape, [0, 0, 0], 1.0, 0.0, sarr.shape)
             aff = torch.as_tensor(snii.affine)
@@ -83,7 +83,7 @@ class NVPrep:
                                 'seg': MetaTensor(torch.from_numpy(sarr)[None], affine=aff)})
         elif img_path.endswith('.bin'):
             from monai.data import MetaTensor
-            from .volio import read_image, read_mask, ras_affine_1mm
+            from ..data.volio import read_image, read_mask, ras_affine_1mm
             aff = torch.as_tensor(ras_affine_1mm())
             d = self.tf_arrays({'image': MetaTensor(torch.from_numpy(read_image(img_path))[None], affine=aff),
                                 'seg': MetaTensor(torch.from_numpy(read_mask(seg_path).astype(np.float32))[None], affine=aff)})
@@ -242,7 +242,7 @@ def main():
     ap.add_argument('--gen', type=int, default=100)
     ap.add_argument('--fill', default='fat')
     a = ap.parse_args()
-    cfg = load_config(os.path.join(os.path.dirname(__file__), '../configs/stageA.yaml'), env=a.env)
+    cfg = load_config(os.path.join(os.path.dirname(__file__), '../../configs/stageA.yaml'), env=a.env)
     os.environ.setdefault('HF_HOME', cfg.paths.hf_home)
     rank, world, device = setup_dist(timeout_min=240)
     nv = NVReason(device, cache_root=os.path.join(cfg.paths.work_root, 'cache_nv'))
@@ -260,7 +260,7 @@ def main():
                 json.dump({'volume_index': [int(i) for i in res['gen_index']], **res['texts']}, fh, indent=1)
             summary[dset] = summ
             print('SUMMARY', json.dumps({'run': 'NV-Reason-CT', 'dataset': dset, **summ}), flush=True)
-            # per-scan scores (as evaluate_stageB) for paired bootstrap CIs against our models on the same scans
+            # per-scan scores (as organic.vlm.evaluate) for paired bootstrap CIs against our models on the same scans
             np.savez_compressed(os.path.join(out_dir, f'{dset}_scores.npz'), labels=L[res['index'].numpy()],
                                 volume=m.volume.to_numpy()[res['index'].numpy()].astype(str),
                                 **{k: (v.half() if k == 'feat' else v).numpy() for k, v in res.items() if torch.is_tensor(v)})
