@@ -1,5 +1,5 @@
 # vlm2_attention (Table 4, '+ attention loss'): vlm1_plain + the answer-attention loss.
-#   torchrun --nproc_per_node 4 -m organic.train_stageB --env configs/env/local.yaml --ablation configs/vlm/vlm2_attention.yaml
+#   torchrun --nproc_per_node 4 -m organic.vlm.train --env configs/env/local.yaml --ablation configs/vlm/vlm2_attention.yaml
 run_name: vlm2_attention
 model: {pool: fixed}
 vlm: {organ_tags: false, encoder_ckpt: '${paths.work_root}/runs/enc4_organic3d/last.pt', freeze_encoder: all}

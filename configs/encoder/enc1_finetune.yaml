@@ -1,6 +1,6 @@
 # enc1_finetune (Table 4, encoder row '+ fine-tuning'): COLIPRI fine-tuned on CT-RATE and Merlin; global pooling,
 # contrastive and classification losses only.
-#   torchrun --nproc_per_node 4 -m organic.train_stageA --env configs/env/local.yaml --ablation configs/encoder/enc1_finetune.yaml
+#   torchrun --nproc_per_node 4 -m organic.encoder.train --env configs/env/local.yaml --ablation configs/encoder/enc1_finetune.yaml
 run_name: enc1_finetune
 model: {queries: global, pool: mean}
 loss: {txt: 0, ev: 0, mir: 0, pair: 0, anat: 0}

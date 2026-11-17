@@ -1,6 +1,6 @@
 # enc4_organic3d = ORGANIC-3D, the final encoder (Table 4, '+ ORGANIC'): organ routing + the ORGANIC losses
 # (organ-erasure, mirror, matched-pair, anatomy-attention) + anatomy-token swap and organ-contrast terms.
-#   torchrun --nproc_per_node 4 -m organic.train_stageA --env configs/env/local.yaml --ablation configs/encoder/enc4_organic3d.yaml
+#   torchrun --nproc_per_node 4 -m organic.encoder.train --env configs/env/local.yaml --ablation configs/encoder/enc4_organic3d.yaml
 run_name: enc4_organic3d
 model: {pool: fixed}
 loss: {organ_con: 0.5, normal_pos: true, swap: 0.5}

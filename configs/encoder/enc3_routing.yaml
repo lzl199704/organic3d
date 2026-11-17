@@ -1,6 +1,6 @@
 # enc3_routing (Table 4, '+ organ routing'): each sentence pools only the tokens of the organs it names.
 # Also the encoder of vlm4_organic3d_on_enc3.
-#   torchrun --nproc_per_node 4 -m organic.train_stageA --env configs/env/local.yaml --ablation configs/encoder/enc3_routing.yaml
+#   torchrun --nproc_per_node 4 -m organic.encoder.train --env configs/env/local.yaml --ablation configs/encoder/enc3_routing.yaml
 run_name: enc3_routing
 model: {pool: fixed}
 loss: {ev: 0, mir: 0, pair: 0, anat: 0}
