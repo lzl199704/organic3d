@@ -35,7 +35,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..'))
 sys.path.insert(0, os.path.join(HERE, '..', 'metrics'))
-from organic.ctrate_v2 import no_chest_volumes  # noqa: E402
+from organic.data.ctrate_v2 import no_chest_volumes  # noqa: E402
 from organic.workroot import work_root  # noqa: E402
 import vlm_scores  # noqa: E402
 
