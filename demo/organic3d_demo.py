@@ -30,8 +30,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..'))
 sys.path.insert(0, os.path.join(HERE, '..', 'scripts', 'inference'))
 import organic3d as O                                                                # noqa: E402
-from organic.evaluate_stageA import EVAL_ORGANS                                      # noqa: E402
-from organic.routing import sentence_organs                                          # noqa: E402
+from organic.encoder.evaluate import EVAL_ORGANS                                      # noqa: E402
+from organic.encoder.routing import sentence_organs                                          # noqa: E402
 from organic.vocab import ORGAN_NAMES, ORGANS, RELATED                               # noqa: E402
 
 FILL_HU, NOISE_SD, DILATE_MM = -100.0, 15.0, 2
