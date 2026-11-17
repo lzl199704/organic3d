@@ -8,7 +8,7 @@
         [--tests answers,reports]
     # a released model in its own environment: harness steps use --model_python, metric steps this python
     python scripts/evaluation/evaluate.py encoder --model hlip --name HLIP --model_python <hlip env>/bin/python
-    # free-text report metrics need the report environment (requirements-report.txt, Java 17 on PATH)
+    # free-text report metrics need the report environment (last section of requirements.txt, Java 17 on PATH)
     python scripts/evaluation/evaluate.py vlm ... --report_python <report env>/bin/python
     python scripts/evaluation/evaluate.py encoder ... --dry_run      # print the commands only
     python scripts/evaluation/evaluate.py                            # no arguments: asks for them
@@ -99,7 +99,7 @@ def ask(a):
     a.tests = q(f'Tests ({",".join(tests)})', 'all')
     a.model_python = q("The model environment's python", sys.executable)
     if a.kind == 'vlm':
-        a.report_python = q("The report environment's python (requirements-report.txt)", sys.executable)
+        a.report_python = q("The report environment's python (see requirements.txt)", sys.executable)
     a.dry_run = q('Only print the commands? (y / n)', 'n').lower().startswith('y')
     return a
 
@@ -115,7 +115,7 @@ def main():
     ap.add_argument('--env', default='configs/env/local.yaml')
     ap.add_argument('--model_python', default=sys.executable, help="python of the model's environment")
     ap.add_argument('--report_python', default=sys.executable,
-                    help='python of the report environment (requirements-report.txt; Java 17 on PATH for METEOR)')
+                    help='python of the report environment (last section of requirements.txt; Java 17 on PATH for METEOR)')
     ap.add_argument('--dry_run', action='store_true')
     a = ap.parse_args()
     if a.kind is None:
