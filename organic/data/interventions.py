@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from .vocab import FINDING_NAMES, SIZE_FINDINGS, finding_organ_ids, control_organ_ids
+from ..vocab import FINDING_NAMES, SIZE_FINDINGS, finding_organ_ids, control_organ_ids
 
 FILLS_HU = {'fat': -100.0, 'soft': 40.0, 'water': 0.0}   # water: evaluation only (no model trains with it)
 

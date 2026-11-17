@@ -18,8 +18,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, Sampler
 
-from .config import abspath, read_manifest
-from .vocab import ORGANS, ORGAN_ID, BACKGROUND, FINDING_NAMES
+from ..config import abspath, read_manifest
+from ..vocab import ORGANS, ORGAN_ID, BACKGROUND, FINDING_NAMES
 
 SIZE, SPACING = 192, 2.0
 CENTER_ORGANS = {'ctrate': ['lung_left', 'lung_right', 'heart'],
