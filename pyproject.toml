@@ -42,7 +42,8 @@ seg = ["TotalSegmentator>=2"]
 dev = ["pytest"]
 
 [tool.setuptools]
-packages = ["organic", "extaudit", "extaudit.models", "extaudit.vlm_models"]
+packages = ["organic", "organic.data", "organic.encoder", "organic.vlm", "organic.baselines",
+            "extaudit", "extaudit.models", "extaudit.vlm_models"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
