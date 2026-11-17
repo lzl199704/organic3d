@@ -4,6 +4,9 @@ Run every script from the repository root (`python scripts/<folder>/<script>.py`
 (`configs/env/local.yaml`, or `$ORGANIC3D_ENV` / `$ORGANIC3D_WORK_ROOT`, see `organic/workroot.py`). Per-scan scores go to
 `{work_root}/extaudit/out*/<name>/`, metrics to `{work_root}/eval/` and `{work_root}/evalB/<name>/`.
 
+Training and model evaluation are modules of the `organic` package (`python -m organic.encoder.train`, see
+`organic/README.md`); the scripts here prepare data, launch runs, run the benchmark and compute the metrics.
+
 | Folder | What it holds | Start with |
 |---|---|---|
 | `setup/` | environment build and checks, CPU preflight, GPU smoke test | `setup_env.sh`, `check_env.py` |
