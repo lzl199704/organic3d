@@ -36,7 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..'))
 from extaudit.core import VolSet                                     # noqa: E402
 from extaudit.models.organic3d_enc import Adapter                     # noqa: E402
-from organic.data import _LUT, _crop_pad                            # noqa: E402
+from organic.data.dataset import _LUT, _crop_pad                            # noqa: E402
 from organic.vocab import ORGAN_NAMES, BACKGROUND, FINDING_NAMES, finding_organ_ids   # noqa: E402
 sys.path.insert(0, HERE)
 from organic.workroot import work_root                                       # noqa: E402
