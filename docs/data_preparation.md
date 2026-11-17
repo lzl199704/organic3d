@@ -43,7 +43,7 @@ python scripts/setup/verify_data.py --env configs/env/local.yaml           # eve
 - **CT-RATE**: the official `valid` split is the test set. Validation = 5% of training patients (seed 0). Every patient
   that appears in ReXGroundingCT val/test is held out (`rexgrounding_holdout`), so ReXGroundingCT stays an untouched
   lesion test for our models. The **v2 test set** drops the non-chest series listed in the CT-RATE data-correction note
-  (`organic/ctrate_v2.py`; copy `dataset/metadata/no_chest_valid.txt` to `{work_root}/manifests/ctrate_v2/dataset/metadata/`).
+  (`organic/data/ctrate_v2.py`; copy `dataset/metadata/no_chest_valid.txt` to `{work_root}/manifests/ctrate_v2/dataset/metadata/`).
 - Volumes to exclude everywhere can be listed in `{work_root}/manifests/<dataset>_exclude.csv` (column `volume`).
 - **Merlin test labels**: the paper's reference labels (5,109 test studies × 21 findings, re-extracted from the reports
   with LLMs; 0 / 1, empty = uncertain) are `protocol/files/merlin_test_labels.csv` of the benchmark
@@ -61,7 +61,7 @@ python scripts/data/prepare_manifests.py --env configs/env/local.yaml      # re-
 
 Qwen3-14B (vLLM) splits each report into sentences and returns finding, polarity and organ per sentence, plus a negated
 and an organ-swapped rewrite for stated abnormalities. Merlin training labels come from the rule layer
-`organic/label_rules.py` on top of these claims (uncertain mentions are left unlabelled).
+`organic/data/label_rules.py` on top of these claims (uncertain mentions are left unlabelled).
 
 ## 4. 2 mm training cache (optional, recommended)
 

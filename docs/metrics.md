@@ -48,7 +48,7 @@ A matched pair $(i,j)\in\Pi_f$ has $y_f(V_i)=1$, $y_f(V_j)=0$ and identical labe
 $$\mathrm{MP}_f=\frac{1}{|\Pi_f|}\sum_{(i,j)\in\Pi_f}\Big(\mathbb 1[g(V_i)>g(V_j)]+\tfrac12\mathbb 1[g(V_i)=g(V_j)]\Big)$$
 
 is a covariate-adjusted AUROC whose covariates are all other labelled findings; a model that predicts $f$ from the
-findings that usually accompany it scores 0.5. Same definition for encoders and VLMs. Code: `organic/ladder.py`
+findings that usually accompany it scores 0.5. Same definition for encoders and VLMs. Code: `organic/metrics.py`
 `matched_pair_auroc` (summary key `matched_pair_auroc`).
 
 ## Organ dependence
@@ -62,7 +62,7 @@ the AUROC points lost when the finding's organ is erased minus those lost when a
 the scans that contain $U$. $O(f)$ are the target organs, $\mathcal C(f)$ the control organs (`organic/vocab.py`).
 The 10 size and shape findings are excluded, because erasure keeps the organ's outline. Summary key
 `effect_<fill>_texture`, stored with the opposite sign (OE $=-$`effect_fat_texture`). Code:
-`organic/evaluate_stageA.py` `metrics`, `write_outputs`.
+`organic/encoder/evaluate.py` `metrics`, `write_outputs`.
 
 **VLMs: organ-erasure hit rate (OEH).** Among findings stated correctly on the clean scan ($y_f=1$, $p_f\ge t_f$, thresholds
 cross-fitted over patient folds), the share no longer stated after a target-organ erasure minus that after a control
