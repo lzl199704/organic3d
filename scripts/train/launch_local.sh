@@ -9,4 +9,4 @@ ENV=${ENV:-configs/env/local.yaml}
 PY=${PY:-$(dirname "$(command -v python)")}     # bin folder of the organic env
 NPROC=$(echo "$GPUS" | tr ',' '\n' | wc -l)
 export CUDA_VISIBLE_DEVICES=$GPUS OMP_NUM_THREADS=4 NCCL_ASYNC_ERROR_HANDLING=1
-exec "$PY/torchrun" --standalone --nproc_per_node "$NPROC" -m organic.train_stageA --env "$ENV" --ablation "$ABL" "$@"
+exec "$PY/torchrun" --standalone --nproc_per_node "$NPROC" -m organic.encoder.train --env "$ENV" --ablation "$ABL" "$@"

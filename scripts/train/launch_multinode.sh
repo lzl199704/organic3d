@@ -14,4 +14,4 @@ PY=${PY:-$(dirname "$(command -v python)")}
 export OMP_NUM_THREADS=4 NCCL_ASYNC_ERROR_HANDLING=1
 exec "$PY/torchrun" --nnodes "$NNODES" --node_rank "$NODE_RANK" --nproc_per_node "$NPROC" \
     --rdzv_backend c10d --rdzv_endpoint "$MASTER_ADDR:$MASTER_PORT" --rdzv_id "${RUN_ID:-organic}" \
-    -m organic.train_stageA --env "$ENV" --ablation "$ABL" "$@"
+    -m organic.encoder.train --env "$ENV" --ablation "$ABL" "$@"
