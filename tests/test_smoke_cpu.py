@@ -1,12 +1,12 @@
 """CPU smoke test on synthetic data: no GPU, no downloads, no real CT, no report text.
 
 Covers the pieces every result depends on:
-  * vocabulary / organ routing, counterfactual planning and image edits (organic.augment)
+  * vocabulary / organ routing, counterfactual planning and image edits (organic.data.interventions)
   * every stage-A loss (finite values, gradients flow)
   * anatomy slots: a slot depends only on its own query and the image (the property the slot swap relies on)
   * AUROC and matched-pair AUROC against brute-force references
   * the benchmark harness end to end: synthetic 1 mm NIfTI scans + TotalSegmentator-style masks -> extaudit.core
-    ladder (clean, mirror, organ erasure with two fills) with a toy encoder -> organic.evaluate_stageA metrics. The toy
+    ladder (clean, mirror, organ erasure with two fills) with a toy encoder -> organic.encoder.evaluate metrics. The toy
     encoder reads only lung density, so erasing the lungs must remove its emphysema signal while erasing control organs
     must not (evidence rung), which checks the intervention, bookkeeping and metric code together.
 
@@ -59,7 +59,7 @@ def synthetic_chest(shape=(64, 64, 64), lung_hu=-850.0, seed=0):
 
 def _meta():
     """= scripts/data/export_audit_set.py meta.json (finding names, prompt phrases, erased organ groups as TS ids)."""
-    from organic.evaluate_stageA import EVAL_ORGANS, cond_name
+    from organic.encoder.evaluate import EVAL_ORGANS, cond_name
     return {'findings': FINDING_NAMES, 'label_name': {f: FINDINGS[f][0] for f in FINDING_NAMES},
             'phrase': {f: FINDINGS[f][2] for f in FINDING_NAMES},
             'eval_organs': {d: [[cond_name(o), sorted(sum((ORGANS[g] for g in (o if isinstance(o, list) else [o])), []))]
@@ -93,7 +93,7 @@ class LungDensityAdapter:
 
 # ----------------------------------------------------------------------------------------------- tests
 def test_vocab_and_routing():
-    from organic.routing import route_matrix, sentence_organs
+    from organic.encoder.routing import route_matrix, sentence_organs
     assert len(FINDING_NAMES) == 39 and len(ORGAN_NAMES) == 16
     for f in FINDING_NAMES:                                  # targets and controls never overlap
         assert not set(finding_organ_ids(f)) & set(control_organ_ids(f)), f
@@ -106,13 +106,13 @@ def test_vocab_and_routing():
 
 
 def test_counterfactual_batch():
-    from organic.augment import build_image_batch, lateral_swap, organ_mask, plan_counterfactuals, severity_swap
+    from organic.data.interventions import build_image_batch, lateral_swap, organ_mask, plan_counterfactuals, severity_swap
     cfg = load_config(CFG, overrides=['aug.ev_prob=1.0'])
     rng = np.random.default_rng(0)
     organs = []
     for s in range(2):
         hu, seg = synthetic_chest(seed=s)
-        from organic.data import _LUT
+        from organic.data.dataset import _LUT
         organs.append(torch.from_numpy(_LUT[seg]))
     labels = torch.full((2, len(FINDING_NAMES)), float('nan'))
     labels[:, [FINDING_NAMES.index(f) for f in CTRATE_FINDINGS]] = 0.0
@@ -140,7 +140,7 @@ def test_counterfactual_batch():
 
 
 def test_losses_backward():
-    from organic import losses as L
+    from organic.encoder import losses as L
     torch.manual_seed(0)
     V, S, F_ = 4, 6, len(FINDING_NAMES)
     Smat = torch.randn(V, S, requires_grad=True)
@@ -168,7 +168,7 @@ def test_losses_backward():
 
 def test_anatomy_slots_are_independent():
     """Slots never attend to each other: changing one slot's query changes only that slot's output."""
-    from organic.model import AnatomyQueries, grid_positions
+    from organic.encoder.model import AnatomyQueries, grid_positions
     torch.manual_seed(0)
     q = AnatomyQueries(kv_dim=32, d=48, n_organs=16, q_per_organ=8, q_global=16, layers=2, heads=4, use_pe=False).eval()
     H, pos = torch.randn(1, 24 ** 3, 32), grid_positions('cpu')
@@ -185,8 +185,8 @@ def test_anatomy_slots_are_independent():
 
 def test_auroc_and_matched_pairs():
     from sklearn.metrics import roc_auc_score
-    from organic.ladder import matched_pair_auroc
-    from organic.train_stageA import auroc
+    from organic.metrics import matched_pair_auroc
+    from organic.utils import auroc
     rng = np.random.default_rng(0)
     y = rng.integers(0, 2, 200).astype(float)
     s = np.round(y + rng.normal(0, 1, 200), 1)              # with ties
@@ -207,7 +207,7 @@ def test_harness_ladder_end_to_end():
     import nibabel as nib
     import pandas as pd
     from extaudit import core
-    from organic.evaluate_stageA import metrics
+    from organic.encoder.evaluate import metrics
     meta = _meta()
     with tempfile.TemporaryDirectory() as tmp:
         rows = []
@@ -244,12 +244,12 @@ def test_harness_ladder_end_to_end():
 
 def test_harness_chest_task():
     """--task chest (extaudit/chest.py): density edits and lobe erasure run end to end; the emphysema edit lowers the
-    toy encoder's emphysema score on emphysema scans and moves no other finding (metric code of evaluate_chest)."""
+    toy encoder's emphysema score on emphysema scans and moves no other finding (metric code of organic.encoder.evaluate_chest)."""
     import nibabel as nib
     import pandas as pd
     from extaudit import core
     from extaudit.chest import run_chest
-    from organic.evaluate_chest import metrics_edits
+    from organic.encoder.evaluate_chest import metrics_edits
     meta = _meta()
     with tempfile.TemporaryDirectory() as tmp:
         rows = []
@@ -283,7 +283,7 @@ def test_harness_chest_task():
 
 def test_answer_then_write_helpers():
     """Stage-B 'list' report mode: finding list prefix, prompt and split back into list and report body."""
-    from organic.train_stageB import finding_list, report_prompt, split_report
+    from organic.vlm.train import finding_list, report_prompt, split_report
     pre = finding_list(['ct_emphysema', 'ct_pleural_effusion'])
     assert pre.startswith('Abnormal findings: ') and pre.rstrip().endswith('Report:')
     lst, body = split_report(pre + 'The lungs are hyperinflated.')

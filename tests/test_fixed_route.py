@@ -1,4 +1,4 @@
-"""Unit test of pool='fixed' routing (the rule-based routing ablation, organic/routing.py) on CPU with random weights
+"""Unit test of pool='fixed' routing (the rule-based routing ablation, organic/encoder/routing.py) on CPU with random weights
 (no checkpoint, no download).
 
     python tests/test_fixed_route.py          (or: python -m pytest tests/)
@@ -12,9 +12,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch  # noqa: E402
 
-import organic.model as M  # noqa: E402
-from organic.model import AnatomyQueries  # noqa: E402
-from organic.routing import route_matrix  # noqa: E402
+import organic.encoder.model as M  # noqa: E402
+from organic.encoder.model import AnatomyQueries  # noqa: E402
+from organic.encoder.routing import route_matrix  # noqa: E402
 
 
 class Stub(torch.nn.Module):            # only the parts score()/attach_route() use
