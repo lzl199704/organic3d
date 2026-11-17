@@ -8,7 +8,8 @@ ORGANIC-3D tests whether a 3D CT model's prediction for a finding comes from the
 trains an encoder and a VLM that pass these tests. This repository has the training code, the evaluation harness that
 runs our models and 18 released models under the same interventions, and the scripts behind every table of the paper.
 
-<p align="center"><img src="docs/assets/fig1_tests.png" width="430" alt="The alignment tests"></p>
+<!-- Figure 1: replace docs/assets/fig1_tests.gif with the new animation (same file name; adjust width if needed). -->
+<p align="center"><img src="docs/assets/fig1_tests.gif" width="430" alt="The alignment tests"></p>
 <p align="center"><em>The alignment tests and their expected responses.</em></p>
 
 ## Contents
