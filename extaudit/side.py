@@ -4,8 +4,8 @@ the side swapped, on the original scan only; scripts/metrics/side_metrics.py tur
 the accuracy on left-side and right-side sentences: 50% for chance and for any model that ignores side).
 
   SIDE_SET=ctrate | merlin   report sentences of the harness test set ({dataset}_set.parquet lat_pairs: [true, swapped])
-                             SIDE_EVERY=k keeps every k-th scan with side sentences (11/03: ctrate 3, merlin 6; the
-                             machine was CPU-bound at ~30 s/scan for RADAR+, so the full sets would take > 1 day)
+                             every 3rd CT-RATE / 6th Merlin scan with side sentences (the paper's 2,045 / 2,769
+                             sentences, the same for every model); SIDE_EVERY=k overrides it (1 = all scans)
   SIDE_SET=rex | aa3         expert-mask sides (scripts/data/prepare_side.py): ReXGroundingCT lung findings, AbdomenAtlas 3.0
                              kidney tumours; scored on the lesion unit's crop as in extaudit/lesion_erasure.py
 Writes {root}/out/<name>/side_<set>_shard{k}of{n}.parquet (one row per sentence).
@@ -30,7 +30,8 @@ def run_side(a, meta, mdl, dev, k, n):
     if SIDE_SET in ('ctrate', 'merlin'):
         st = pd.read_parquet(os.path.join(a.root, f'{SIDE_SET}_set.parquet'))
         st = st[st.lat_pairs.map(lambda v: bool(v) and v != '[]')]
-        st = st.iloc[::int(os.environ.get('SIDE_EVERY', '1'))]   # 11/03: fixed subset, the same scans for every model
+        every = int(os.environ.get('SIDE_EVERY', {'ctrate': 3, 'merlin': 6}[SIDE_SET]))
+        st = st.iloc[::every]          # the paper's fixed subset, the same scans for every model (2,045 / 2,769 sentences)
         sents = None
     else:
         sents = pd.read_parquet(os.path.join(W, 'side', f'{SIDE_SET}.parquet'))
