@@ -1,4 +1,4 @@
-"""SPECTRE-Large (Claessens et al., CVPR 2026, arXiv 2511.17209; code github.com/cclaess/SPECTRE @c05af47, MIT; weights
+"""SPECTRE-Large (Claessens et al., arXiv 2511.17209; code github.com/cclaess/SPECTRE @c05af47, MIT; weights
 HF cclaess/SPECTRE-Large + cclaess/SPECTRE components, CC-BY-NC-SA 4.0), run in $ORGANIC3D_BASELINES/spectre/venv (the released
 components downloaded to spectre/components).
 
@@ -7,7 +7,7 @@ released SigLIP image projection head on [combiner CLS ; mean combiner tokens] (
 Preprocessing, RAS (= our array as is), HU clipped to [-1000, 1000] -> [0, 1], pad value 0 (= -1000 HU):
   'vla'  (default) = the VLA pretraining geometry (ssl/transforms/siglip_transform.py): 0.75 x 0.75 x 1.5 mm, centre
          crop / pad to 384 x 384 x 256 (the random crop at eval = centre), 3 x 3 x 4 crops;
-  'eval' = the authors' downstream pipeline (experiments/cvpr26_fm_for_ct_diag_task_1/extract_feat_LP.py): 0.5 x 0.5 x
+  'eval' = the authors' downstream linear-probe pipeline (extract_feat_LP.py in their experiments folder): 0.5 x 0.5 x
          1.0 mm, centre crop / pad to 512 x 512 x 256, 4 x 4 x 4 crops.
 Text = Qwen3-Embedding-0.6B + the released LoRA (r 16, alpha 64, q/k/v/o; loralib, merged at eval) + SigLIP text
 projection head, last-token pooling, Qwen tokenizer with special tokens (pretrain_siglip.py / utils/collate.py).
