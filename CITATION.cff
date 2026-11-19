@@ -3,11 +3,30 @@ message: "If you use this benchmark or code, please cite the paper below."
 title: "ORGANIC-3D"
 type: software
 authors:
-  - name: "ORGANIC-3D authors"
+  - family-names: Liu
+    given-names: Zelong
+  - family-names: Ahmed
+    given-names: Hamza
+  - family-names: Lee
+    given-names: Wynn Wingyi
+  - family-names: Torjman
+    given-names: Mickael
+  - family-names: Dimitrakakis
+    given-names: Alexander
+  - family-names: Lu
+    given-names: Jiahua
+  - family-names: Deyer
+    given-names: Timothy
+  - family-names: Taouli
+    given-names: Bachir
+  - family-names: Fayad
+    given-names: Zahi A.
+  - family-names: Mei
+    given-names: Xueyan
 version: 0.1.0
 license: Apache-2.0
 repository-code: "https://github.com/lzl199704/organic3d"
-url: "<PROJECT_URL>"
+url: "https://github.com/lzl199704/organic3d"
 keywords:
   - 3D CT
   - vision-language models
@@ -16,7 +35,28 @@ keywords:
   - medical imaging
 preferred-citation:
   type: article
-  title: "ORGANIC-3D: Grounding 3D CT Vision Language Models in Organ-Level Image–Text Coupling"
+  title: "ORGANIC3D: Grounding 3D CT Vision Language Models in Organ Level Image Text Coupling"
   authors:
-    - name: "ORGANIC-3D authors"
-  url: "<PAPER_URL>"
+    - family-names: Liu
+      given-names: Zelong
+    - family-names: Ahmed
+      given-names: Hamza
+    - family-names: Lee
+      given-names: Wynn Wingyi
+    - family-names: Torjman
+      given-names: Mickael
+    - family-names: Dimitrakakis
+      given-names: Alexander
+    - family-names: Lu
+      given-names: Jiahua
+    - family-names: Deyer
+      given-names: Timothy
+    - family-names: Taouli
+      given-names: Bachir
+    - family-names: Fayad
+      given-names: Zahi A.
+    - family-names: Mei
+      given-names: Xueyan
+  journal: "arXiv preprint arXiv:2611.23529"
+  year: 2026
+  url: "https://arxiv.org/abs/2611.23529"
