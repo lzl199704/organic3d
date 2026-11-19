@@ -2,15 +2,22 @@
 
 **ORGANIC-3D: Grounding 3D CT Vision Language Models in Organ-Level Image–Text Coupling**
 
-[Paper](<PAPER_URL>) · [Benchmark](https://huggingface.co/datasets/zllhhhh/organic3d-benchmark) · [Encoder weights](https://huggingface.co/zllhhhh/organic3d-encoder) · [VLM weights](https://huggingface.co/zllhhhh/organic3d-vlm)
+<p align="center">
+  <a href="https://arxiv.org/abs/2611.23529"><img src="https://img.shields.io/badge/arXiv-2611.23529-B31B1B?logo=arxiv&logoColor=white" alt="arXiv"></a>
+  <a href="https://huggingface.co/zllhhhh/organic3d-encoder"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Encoder-yellow" alt="Encoder weights"></a>
+  <a href="https://huggingface.co/zllhhhh/organic3d-vlm"><img src="https://img.shields.io/badge/%F0%9F%A4%97-VLM-yellow" alt="VLM weights"></a>
+  <a href="https://huggingface.co/datasets/zllhhhh/organic3d-benchmark"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Benchmark-yellow" alt="Benchmark"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue" alt="License"></a>
+</p>
 
 ORGANIC-3D tests whether a 3D CT model's prediction for a finding comes from the image evidence for that finding, and
 trains an encoder and a VLM that pass these tests. This repository has the training code, the evaluation harness that
 runs our models and 18 released models under the same interventions, and the scripts behind every table of the paper.
 
-<!-- Figure 1: replace docs/assets/fig1_tests.gif with the new animation (same file name; adjust width if needed). -->
-<p align="center"><img src="docs/assets/fig1_tests.gif" width="430" alt="The alignment tests"></p>
-<p align="center"><em>The alignment tests and their expected responses.</em></p>
+<p align="center"><img src="docs/assets/organic3d_evidence_intro.gif" width="100%" alt="Is the model using the correct evidence?"></p>
+<p align="center"><em>Is there a mass in the left kidney? Erasing the mass should lower the answer; editing healthy tissue
+while keeping the mass should not. ORGANIC-3D follows both, while NV-Reason-CT keeps its answer when the mass is erased
+and drops it when healthy tissue is edited.</em></p>
 
 ## Contents
 
@@ -282,7 +289,13 @@ tests/          CPU unit tests on synthetic data
 ## Citation and licence
 
 ```bibtex
-<CITATION>
+@article{liu2026organic3d,
+  title   = {ORGANIC3D: Grounding 3D CT Vision Language Models in Organ Level Image Text Coupling},
+  author  = {Liu, Zelong and Ahmed, Hamza and Lee, Wynn Wingyi and Torjman, Mickael and Dimitrakakis, Alexander and
+             Lu, Jiahua and Deyer, Timothy and Taouli, Bachir and Fayad, Zahi A. and Mei, Xueyan},
+  journal = {arXiv preprint arXiv:2611.23529},
+  year    = {2026}
+}
 ```
 
 Code: Apache-2.0 (`LICENSE`). Datasets, released baselines and our weights keep their own terms (CT-RATE and
