@@ -11,13 +11,10 @@
 </p>
 
 ORGANIC-3D tests whether a 3D CT model's prediction for a finding comes from the image evidence for that finding, and
-trains an encoder and a VLM that pass these tests. This repository has the training code, the evaluation harness that
-runs our models and 18 released models under the same interventions, and the scripts behind every table of the paper.
+trains an encoder and a VLM that pass these tests. 
 
 <p align="center"><img src="docs/assets/organic3d_evidence_intro.gif" width="100%" alt="Is the model using the correct evidence?"></p>
-<p align="center"><em>Is there a mass in the left kidney? Erasing the mass should lower the answer; editing healthy tissue
-while keeping the mass should not. ORGANIC-3D follows both, while NV-Reason-CT keeps its answer when the mass is erased
-and drops it when healthy tissue is edited.</em></p>
+<p align="center"><em>Is there a mass in the left kidney? And do VLMs answer with the correct anatomical evidence?</em></p>
 
 ## Contents
 
