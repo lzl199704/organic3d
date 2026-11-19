@@ -83,9 +83,7 @@ Preparation steps: [`docs/data_preparation.md`](docs/data_preparation.md). The p
 
 ```mermaid
 flowchart LR
-  D["Test sets<br/>CT-RATE · RAD-ChestCT · Merlin<br/>ReXGroundingCT · AbdomenAtlas 3.0"] --> H
-  M["Your model<br/>(adapter)"] --> H["Harness<br/>clean scan · organ and lesion erasure<br/>control edits · side swap"]
-  H --> S["Per-scan scores"] --> E["Metric scripts<br/>MLC-AUROC · MP · OE · OEH<br/>Side · LL · LE · reports"] --> T["Tables 1–3"]
+  M["Your model"] --> R["Run on test CT scans<br/>original and edited"] --> S["Scores"] --> T["Results tables"]
 ```
 
 One command runs every test and metric of the paper for one model:
