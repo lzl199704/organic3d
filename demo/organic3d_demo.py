@@ -121,18 +121,20 @@ def _bars(ax, res, show):
     lo, hi = min(0.0, min(vals)), max(vals)
     span = hi - lo
     ax.set_xlim(lo - 0.04 * span, hi + 0.42 * span)
-    ax.set_ylim(len(rows) - 0.35, -0.75)
+    ax.set_ylim(len(rows) - 0.5, -0.5)
     ax.axvline(0, color='#c9ced6', lw=0.8)
-    for k, (key, label, v, c) in enumerate(rows):                       # label above its bar: no overlap at any width
-        ax.text(lo - 0.04 * span, k - 0.42, label, ha='left', va='center', fontsize=9, color='#2b3440')
+    ax.set_yticks(range(len(rows)))                                    # labels right-aligned, left of the axis
+    ax.set_yticklabels([r[1] for r in rows], fontsize=9, color='#2b3440')
+    ax.tick_params(axis='y', length=0, pad=6)
+    for k, (key, label, v, c) in enumerate(rows):
         if key not in show:
             continue
-        ax.barh(k, v, color=c, height=0.42)
+        ax.barh(k, v, color=c, height=0.55)
         txt = f'{v:.2f}'
         if key in ('target', 'control', 'side'):
             txt += f'   ({_signed(v - res["score_clean"])})'
         ax.text(max(v, 0) + 0.02 * span, k, txt.replace('-', '\u2212'), va='center', fontsize=9, color='#2b3440')
-    ax.set_xticks([]); ax.set_yticks([])
+    ax.set_xticks([])
     for sp in ax.spines.values():
         sp.set_visible(False)
     ax.set_title('Score of the sentence, S(V, s)', fontsize=9, color='#5b6470', loc='left')
@@ -163,8 +165,8 @@ def figure(res, vols, mt, mc, path=None):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     view = _views(res, vols, mt, mc)
-    fig = plt.figure(figsize=(12.5, 3.9), facecolor='white')
-    gs = fig.add_gridspec(1, 5, width_ratios=[1, 1, 1, 0.12, 1.25], wspace=0.05)
+    fig = plt.figure(figsize=(14, 3.9), facecolor='white')
+    gs = fig.add_gridspec(1, 5, width_ratios=[1, 1, 1, 0.75, 1.25], wspace=0.05)
     panels = (('clean', None, 'Original', None), ('target', mt, 'Erase target', _nice(res['target_organs'])),
               ('control', mc, 'Erase control', _nice(res['control_organs'])))
     for k, (key, m, title, sub) in enumerate(panels):
@@ -213,8 +215,8 @@ def animation(res, vols, mt, mc, path, dpi=100):
     seq.append((clean, None, _verdict(res), {'clean', 'target', 'control', 'side'}, sent, 3200))
     frames, durs = [], []
     for img, cont, cap, show, sen, ms in seq:
-        fig = plt.figure(figsize=(10.5, 3.7), facecolor='white')
-        gs = fig.add_gridspec(1, 3, width_ratios=[1, 0.12, 1.25], wspace=0.04, left=0.02, right=0.98, top=0.82, bottom=0.12)
+        fig = plt.figure(figsize=(11.5, 3.7), facecolor='white')
+        gs = fig.add_gridspec(1, 3, width_ratios=[1, 0.6, 1.25], wspace=0.04, left=0.02, right=0.98, top=0.82, bottom=0.12)
         ax = fig.add_subplot(gs[0])
         ax.imshow(img, cmap='gray', vmin=WIN[0], vmax=WIN[1])
         if cont is not None:
